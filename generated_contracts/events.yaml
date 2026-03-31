@@ -1,0 +1,113 @@
+kind: DataContract
+apiVersion: v3.0.0
+id: week5-event-sourcing-platform
+info:
+  title: Week 5 Event Sourcing Platform — Event Records
+  version: 1.0.0
+  owner: week5-team
+  description: Auto-generated contract for events. One record per unit of output.
+    Generated 2026-03-31T22:47:26Z.
+  generated_by: ContractGenerator v1.0.0
+  generated_at: '2026-03-31T22:47:26Z'
+servers:
+  local:
+    type: local
+    path: outputs/week5/events.jsonl
+    format: jsonl
+terms:
+  usage: Internal inter-system data contract. Do not publish externally.
+  limitations: All confidence fields must remain in 0.0–1.0 float range. Do not change
+    to percentage scale without a formal migration plan.
+schema:
+  event_id:
+    type: string
+    required: true
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    unique: true
+  event_type:
+    type: string
+    required: true
+  aggregate_id:
+    type: string
+    required: true
+  aggregate_type:
+    type: string
+    required: true
+    enum:
+    - Loan
+    - Agent
+    - Compliance
+    - Docpkg
+    - Fraud
+    - Audit
+  sequence_number:
+    type: integer
+    required: true
+    minimum: 1
+    maximum: 21
+  payload:
+    type: object
+    required: true
+  metadata:
+    type: object
+    required: true
+    properties:
+      causation_id:
+        type: string
+        nullable: true
+      correlation_id:
+        type: string
+        format: uuid
+      user_id:
+        type: string
+      source_service:
+        type: string
+  schema_version:
+    type: string
+    required: true
+    enum:
+    - '1'
+    - '2'
+  occurred_at:
+    type: string
+    required: true
+    format: date-time
+    description: ISO 8601 timestamp
+  recorded_at:
+    type: string
+    required: true
+    format: date-time
+    description: ISO 8601 timestamp
+quality:
+  type: SodaChecks
+  specification:
+    checks for events:
+    - missing_count(event_id) = 0
+    - duplicate_count(event_id) = 0
+    - missing_count(event_type) = 0
+    - missing_count(aggregate_id) = 0
+    - missing_count(aggregate_type) = 0
+    - missing_count(sequence_number) = 0
+    - missing_count(schema_version) = 0
+    - missing_count(occurred_at) = 0
+    - missing_count(recorded_at) = 0
+    - row_count >= 1
+lineage:
+  upstream: []
+  downstream:
+  - id: week7-schema-contract
+    description: Payload validated against event type's JSON Schema
+    fields_consumed:
+    - event_type
+    - payload
+    - schema_version
+    breaking_if_changed:
+    - event_type
+    - payload
+  - id: file::src/week2/courtroom.py
+    label: courtroom.py
+    relationship: WRITES
+  - id: file::src/week3/extractor.py
+    label: extractor.py
+    relationship: PRODUCES

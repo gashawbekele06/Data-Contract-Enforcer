@@ -1,0 +1,35 @@
+version: 2
+models:
+- name: intent_records
+  description: Auto-generated contract for intent records. One record per unit of
+    output. Generated 2026-03-31T22:47:27Z.
+  columns:
+  - name: intent_id
+    tests:
+    - not_null
+    - unique
+  - name: description
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - Enforce confidence field range constraints across all week outputs
+        - Validate extracted facts conform to confidence threshold rules
+        - Score LLM outputs against structured evaluation rubrics
+        - Detect schema drift in inter-system data contracts
+        - Generate Bitol-compatible YAML contracts from JSONL datasets
+        - Attribute data quality violations to originating code changes
+        - Ingest and replay audit events with causal ordering guarantees
+        - Extract financial facts and entities from PDF annual reports
+        - Map data lineage from source documents to downstream consumers
+        - Profile statistical distributions of numeric columns in data pipelines
+  - name: code_refs
+    tests:
+    - not_null
+  - name: governance_tags
+    tests:
+    - not_null
+  - name: created_at
+    tests:
+    - not_null
+    description: ISO 8601 timestamp

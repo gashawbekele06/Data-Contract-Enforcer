@@ -1,0 +1,12 @@
+{
+  "week3-document-refinery-extractions.processing_time_ms": {
+    "mean": 95611.64,
+    "stddev": 207086.24981066046,
+    "n": 50
+  },
+  "week5-event-sourcing-platform.sequence_number": {
+    "mean": 5.0,
+    "stddev": 4.836728170358491,
+    "n": 100
+  }
+}

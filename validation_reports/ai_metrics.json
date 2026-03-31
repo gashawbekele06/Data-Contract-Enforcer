@@ -1,0 +1,40 @@
+{
+  "run_timestamp": "2026-03-31T22:51:26Z",
+  "embedding_drift": {
+    "status": "BASELINE_SET",
+    "message": "Baseline stored from 200 text samples.",
+    "drift_score": 0.0,
+    "threshold": 0.15,
+    "n_sample": 200
+  },
+  "prompt_input_validation": {
+    "status": "PASS",
+    "total_records": 50,
+    "valid": 50,
+    "invalid": 0,
+    "violation_rate": 0.0,
+    "error_samples": [],
+    "quarantine_path": null,
+    "message": "Prompt input validation: 0/50 records invalid (rate=0.0000)"
+  },
+  "llm_output_schema": {
+    "run_date": "2026-03-31T22:51:26Z",
+    "contract_id": "week2-digital-courtroom",
+    "total_outputs": 50,
+    "schema_violations": 0,
+    "violation_rate": 0.0,
+    "trend": "stable",
+    "baseline_violation_rate": 0.0,
+    "status": "PASS",
+    "error_samples": [],
+    "message": "LLM output schema: 0/50 violations (rate=0.0000, trend=stable)"
+  },
+  "trace_schema": {
+    "status": "PASS",
+    "total": 50,
+    "run_type_violations": 0,
+    "token_mismatch": 0,
+    "message": "Trace schema: 0 run_type violations, 0 token count mismatches out of 50 records."
+  },
+  "overall_status": "WARN"
+}

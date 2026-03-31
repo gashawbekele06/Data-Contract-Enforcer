@@ -1,0 +1,51 @@
+version: 2
+models:
+- name: events
+  description: Auto-generated contract for events. One record per unit of output.
+    Generated 2026-03-31T22:47:26Z.
+  columns:
+  - name: event_id
+    tests:
+    - not_null
+    - unique
+  - name: event_type
+    tests:
+    - not_null
+  - name: aggregate_id
+    tests:
+    - not_null
+  - name: aggregate_type
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - Loan
+        - Agent
+        - Compliance
+        - Docpkg
+        - Fraud
+        - Audit
+  - name: sequence_number
+    tests:
+    - not_null
+  - name: payload
+    tests:
+    - not_null
+  - name: metadata
+    tests:
+    - not_null
+  - name: schema_version
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - '1'
+        - '2'
+  - name: occurred_at
+    tests:
+    - not_null
+    description: ISO 8601 timestamp
+  - name: recorded_at
+    tests:
+    - not_null
+    description: ISO 8601 timestamp

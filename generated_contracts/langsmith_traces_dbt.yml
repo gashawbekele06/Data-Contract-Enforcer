@@ -1,0 +1,67 @@
+version: 2
+models:
+- name: runs
+  description: Auto-generated contract for runs. One record per unit of output. Generated
+    2026-03-31T22:47:30Z.
+  columns:
+  - name: id
+    tests:
+    - not_null
+  - name: name
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - EntityLinkerTool
+        - DocumentExtractionChain
+        - EmbeddingRetriever
+        - ScoringRubricLLM
+        - FactParserLLM
+        - ContractValidatorChain
+  - name: run_type
+    tests:
+    - not_null
+    - accepted_values:
+        values:
+        - llm
+        - chain
+        - tool
+        - retriever
+        - embedding
+  - name: inputs
+    tests:
+    - not_null
+  - name: outputs
+    tests:
+    - not_null
+  - name: error
+  - name: start_time
+    tests:
+    - not_null
+    description: ISO 8601 timestamp
+  - name: end_time
+    tests:
+    - not_null
+    description: ISO 8601 timestamp
+  - name: total_tokens
+    tests:
+    - not_null
+  - name: prompt_tokens
+    tests:
+    - not_null
+  - name: completion_tokens
+    tests:
+    - not_null
+  - name: total_cost
+    tests:
+    - not_null
+  - name: tags
+    tests:
+    - not_null
+  - name: parent_run_id
+    tests:
+    - unique
+  - name: session_id
+    tests:
+    - not_null
+    - unique
