@@ -89,6 +89,8 @@ quality:
     - missing_count(aggregate_id) = 0
     - missing_count(aggregate_type) = 0
     - missing_count(sequence_number) = 0
+    - min(sequence_number) >= 1
+    - max(sequence_number) <= 21
     - missing_count(schema_version) = 0
     - missing_count(occurred_at) = 0
     - missing_count(recorded_at) = 0

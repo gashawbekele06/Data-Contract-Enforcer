@@ -28,6 +28,8 @@ models:
   - name: sequence_number
     tests:
     - not_null
+    - dbt_utils.expression_is_true:
+        expression: sequence_number >= 1 and sequence_number <= 21
   - name: payload
     tests:
     - not_null

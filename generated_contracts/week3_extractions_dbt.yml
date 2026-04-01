@@ -32,6 +32,8 @@ models:
   - name: processing_time_ms
     tests:
     - not_null
+    - dbt_utils.expression_is_true:
+        expression: processing_time_ms >= 1
     description: Must be a positive integer (milliseconds).
   - name: token_count
     tests:
