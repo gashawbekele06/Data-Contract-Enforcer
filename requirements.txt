@@ -1,0 +1,10 @@
+# Core runtime dependencies — sufficient to run all evaluation commands
+# Install with: pip install -r requirements.txt
+pandas>=2.0.0
+numpy>=1.24.0
+pyyaml>=6.0
+
+# Optional: LLM annotation (--annotate flag) and embedding drift detection
+# Scripts degrade gracefully without these; set ANTHROPIC_API_KEY / OPENAI_API_KEY
+anthropic>=0.87.0
+openai>=1.0.0

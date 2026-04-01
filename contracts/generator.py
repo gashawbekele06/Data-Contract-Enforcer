@@ -62,6 +62,17 @@ CONTRACT_ID_MAP = {
     "runs": "langsmith-traces",
 }
 
+# Map stem → output file base name (without extension)
+# Ensures generated files use the week-prefixed name expected by runner.py
+OUTPUT_STEM_MAP = {
+    "intent_records": "week1_intent_records",
+    "verdicts": "week2_verdicts",
+    "extractions": "week3_extractions",
+    "lineage_snapshots": "week4_lineage_snapshots",
+    "events": "week5_events",
+    "runs": "runs",
+}
+
 CONTRACT_TITLE_MAP = {
     "intent_records": "Week 1 Intent-Code Correlator — Intent Records",
     "verdicts": "Week 2 Digital Courtroom — Verdict Records",
@@ -610,6 +621,8 @@ class ContractGenerator:
         self.annotate = annotate
         self.stem = self.source.stem  # e.g. "extractions"
         self.contract_id = CONTRACT_ID_MAP.get(self.stem, self.stem.replace("_", "-"))
+        # Output file base name: e.g. "week3_extractions" so runner.py finds the right file
+        self.out_stem = OUTPUT_STEM_MAP.get(self.stem, self.stem)
         self.now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.ts_slug = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
@@ -778,7 +791,7 @@ class ContractGenerator:
         contract = self.build_contract(df, profiles, lineage, annotations)
 
         # Save Bitol YAML
-        out_yaml = self.output_dir / f"{self.stem}.yaml"
+        out_yaml = self.output_dir / f"{self.out_stem}.yaml"
         with open(out_yaml, "w", encoding="utf-8") as f:
             yaml.dump(contract, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
         try:
@@ -788,7 +801,7 @@ class ContractGenerator:
 
         # Save dbt schema.yml
         dbt = self.build_dbt_schema(contract)
-        out_dbt = self.output_dir / f"{self.stem}_dbt.yml"
+        out_dbt = self.output_dir / f"{self.out_stem}_dbt.yml"
         with open(out_dbt, "w", encoding="utf-8") as f:
             yaml.dump(dbt, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
         try:

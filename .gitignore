@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.installed.cfg
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env/
+.conda/
+
+# Environment / secrets
+.env
+.env.*
+*.env
+!.env.example
+
+# uv
+.uv/
+uv.lock
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.log
+
+# Generated / ephemeral outputs — keep committed snapshots but ignore runtime noise
+# Keep: generated_contracts/, schema_snapshots/, validation_reports/, outputs/
+# Ignore: quarantine dumps (can be large), re-generatable baselines are kept intentionally
+outputs/quarantine/
+
+# Keep the committed embedding baseline; ignore any temp numpy files created mid-run
+schema_snapshots/*.npz.tmp
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Distribution / packaging
+MANIFEST
+pip-wheel-metadata/

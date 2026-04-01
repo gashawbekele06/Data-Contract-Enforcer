@@ -16,6 +16,11 @@ uv sync
 
 Requires Python 3.11+. All dependencies are declared in `pyproject.toml` and managed by `uv`.
 
+**Alternative (plain pip — no uv required):**
+```bash
+pip install -r requirements.txt
+```
+
 Optional (AI annotation and embedding drift): set `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` in environment. All scripts degrade gracefully without API keys.
 
 ---
