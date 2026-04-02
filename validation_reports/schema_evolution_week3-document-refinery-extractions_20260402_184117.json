@@ -1,0 +1,27 @@
+{
+  "analysis_id": "f052b8be-4850-43fd-9c03-93fcb439d560",
+  "contract_id": "week3-document-refinery-extractions",
+  "snapshot_a": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week3-document-refinery-extractions\\20260402_183936_breaking.yaml",
+  "snapshot_b": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week3-document-refinery-extractions\\20260402_184117.yaml",
+  "analyzed_at": "2026-04-02T18:41:17Z",
+  "compatibility_verdict": "FULL_COMPATIBLE",
+  "total_changes": 1,
+  "breaking_changes": 0,
+  "compatible_changes": 1,
+  "changes": [
+    {
+      "change_type": "range_widened",
+      "column": "processing_time_ms",
+      "old_value": "min=1000, max=60000",
+      "new_value": "min=1, max=None",
+      "backward_compatible": true,
+      "required_action": "None. Wider range is backward compatible.",
+      "risk_level": "LOW",
+      "note": null
+    }
+  ],
+  "human_summary": [],
+  "migration_checklist": [],
+  "rollback_plan": "No rollback needed \u2014 all changes are backward compatible.",
+  "blast_radius_note": "No blast radius action required."
+}

@@ -654,7 +654,11 @@ class ContractGenerator:
             clause = _schema_clause(col, p)
             if col in annotations:
                 clause["llm_annotations"] = annotations[col]
-            if p.get("format") == "uuid" and col.endswith("_id"):
+            # Only mark primary key fields as unique (not foreign keys like parent_run_id,
+            # causation_id, correlation_id, aggregate_id — these can repeat across records)
+            _FK_SUFFIXES = ("parent_run_id", "causation_id", "correlation_id",
+                            "aggregate_id", "rubric_id", "target_ref")
+            if p.get("format") == "uuid" and col.endswith("_id") and col not in _FK_SUFFIXES:
                 clause["unique"] = True
             schema[col] = clause
 

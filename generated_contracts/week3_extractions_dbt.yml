@@ -2,7 +2,7 @@ version: 2
 models:
 - name: extractions
   description: Auto-generated contract for extractions. One record per unit of output.
-    Generated 2026-04-01T09:45:15Z.
+    Generated 2026-04-02T18:41:17Z.
   columns:
   - name: doc_id
     tests:
@@ -32,8 +32,6 @@ models:
   - name: processing_time_ms
     tests:
     - not_null
-    - dbt_utils.expression_is_true:
-        expression: processing_time_ms >= 1
     description: Must be a positive integer (milliseconds).
   - name: token_count
     tests:

@@ -1,0 +1,16 @@
+{
+  "analysis_id": "f52d5474-0e09-4a05-a70d-69f1305b8ccc",
+  "contract_id": "week1-intent-code-correlator",
+  "snapshot_a": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week1-intent-code-correlator\\20260402_183657.yaml",
+  "snapshot_b": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week1-intent-code-correlator\\20260402_184117.yaml",
+  "analyzed_at": "2026-04-02T18:41:17Z",
+  "compatibility_verdict": "FULL_COMPATIBLE",
+  "total_changes": 0,
+  "breaking_changes": 0,
+  "compatible_changes": 0,
+  "changes": [],
+  "human_summary": [],
+  "migration_checklist": [],
+  "rollback_plan": "No rollback needed \u2014 all changes are backward compatible.",
+  "blast_radius_note": "No blast radius action required."
+}

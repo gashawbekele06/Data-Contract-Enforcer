@@ -1,0 +1,128 @@
+kind: DataContract
+apiVersion: v3.0.0
+id: week2-digital-courtroom
+info:
+  title: Week 2 Digital Courtroom — Verdict Records
+  version: 1.0.0
+  owner: week2-team
+  description: Auto-generated contract for verdicts. One record per unit of output.
+    Generated 2026-04-02T18:36:08Z.
+  generated_by: ContractGenerator v1.0.0
+  generated_at: '2026-04-02T18:36:08Z'
+servers:
+  local:
+    type: local
+    path: outputs/week2/verdicts.jsonl
+    format: jsonl
+terms:
+  usage: Internal inter-system data contract. Do not publish externally.
+  limitations: All confidence fields must remain in 0.0–1.0 float range. Do not change
+    to percentage scale without a formal migration plan.
+schema:
+  verdict_id:
+    type: string
+    required: true
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    unique: true
+  target_ref:
+    type: string
+    required: true
+    enum:
+    - src/week4/cartographer.py
+    - src/week2/courtroom.py
+    - src/week7/contracts/runner.py
+    - src/week5/event_store.py
+    - src/week5/aggregate.py
+    - src/week3/extractor.py
+    - src/week7/contracts/generator.py
+    - src/week4/graph_builder.py
+    - src/week1/correlator.py
+    - src/week3/fact_parser.py
+  rubric_id:
+    type: string
+    required: true
+    format: sha256
+    pattern: ^[a-f0-9]{64}$
+    enum:
+    - 3ebb9d6fbc87433443d51803b2bb5f51ee043994927fbeae4f888afeaa8af5f8
+    - ce25eef617f094f6a9d156df0b9570d39219cc16d540a68d641d5fdb262218e7
+    - 6f481d7b594599c80d046c57d9d8e96c34c4f669ff5a02dd8ecec2b8c9474111
+    - 9577fda02b62a7c03ae35d9893ef393acc012723200a477d881ef87a51c6d561
+  rubric_version:
+    type: string
+    required: true
+    format: semver
+  scores:
+    type: object
+    required: true
+    description: 'Map of criterion_name → {score: int 1–5, evidence: list[str], notes:
+      str}'
+    additionalProperties:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+        evidence:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+  overall_verdict:
+    type: string
+    required: true
+    enum:
+    - PASS
+    - FAIL
+    - WARN
+    description: One of exactly PASS | FAIL | WARN.
+  overall_score:
+    type: number
+    required: true
+    minimum: 1.5
+    maximum: 4.5
+  confidence:
+    type: number
+    required: true
+    minimum: 0.0
+    maximum: 1.0
+    description: Confidence score — MUST remain in 0.0–1.0 float range. Changing scale
+      to 0–100 is a BREAKING CHANGE.
+  evaluated_at:
+    type: string
+    required: true
+    format: date-time
+    description: ISO 8601 timestamp
+quality:
+  type: SodaChecks
+  specification:
+    checks for verdicts:
+    - missing_count(verdict_id) = 0
+    - duplicate_count(verdict_id) = 0
+    - missing_count(target_ref) = 0
+    - missing_count(rubric_id) = 0
+    - missing_count(rubric_version) = 0
+    - missing_count(overall_verdict) = 0
+    - missing_count(overall_score) = 0
+    - min(overall_score) >= 1.0
+    - max(overall_score) <= 5.0
+    - missing_count(confidence) = 0
+    - min(confidence) >= 0.0
+    - max(confidence) <= 1.0
+    - missing_count(evaluated_at) = 0
+    - row_count >= 1
+lineage:
+  upstream: []
+  downstream:
+  - id: week7-ai-contract-extension
+    description: LLM output schema validation tracks verdict structure
+    fields_consumed:
+    - overall_verdict
+    - scores
+    - confidence
+    breaking_if_changed:
+    - overall_verdict
+    - scores

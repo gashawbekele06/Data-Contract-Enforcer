@@ -2,7 +2,7 @@ version: 2
 models:
 - name: verdicts
   description: Auto-generated contract for verdicts. One record per unit of output.
-    Generated 2026-03-31T22:47:28Z.
+    Generated 2026-04-02T18:41:17Z.
   columns:
   - name: verdict_id
     tests:

@@ -5,10 +5,25 @@ ViolationAttributor — Phase 2B
 Traces a validation failure back to the upstream commit that introduced it,
 using the Week 4 lineage graph together with git log / git blame.
 
+Attribution runs in four steps (as specified in Phase 2B):
+  1. Registry blast radius query  — load contract_registry/subscriptions.yaml,
+     find subscribers whose breaking_fields match the failing field. This is
+     the authoritative subscriber list (Tier 1 registry model).
+  2. Lineage traversal for enrichment — BFS on the Week 4 lineage graph to
+     compute transitive contamination depth for each registry subscriber.
+  3. Git blame for cause attribution — git log / blame on upstream files to
+     produce a ranked blame chain with confidence scores.
+  4. Write violation log — append to violation_log/violations.jsonl with
+     registry-sourced blast radius + lineage contamination depth + blame chain.
+
+In Tier 2+ production: Step 1 becomes a registry API call
+  (GET /api/subscriptions?contract_id=X&breaking_field=Y).
+  Steps 2–4 remain identical.
+
 Outputs a violation record to violation_log/violations.jsonl containing:
   - The failing check
   - A ranked blame chain (up to 5 candidates)
-  - A blast radius (affected nodes and pipelines)
+  - A blast radius (registry-sourced subscriber list + lineage depth enrichment)
 
 Usage
 -----
@@ -21,6 +36,11 @@ Usage
   python contracts/attributor.py \\
       --report ... \\
       --check-id week3-document-refinery-extractions.extracted_facts.confidence.range
+
+  # Specify a custom registry path
+  python contracts/attributor.py \\
+      --report ... \\
+      --registry contract_registry/subscriptions.yaml
 """
 
 from __future__ import annotations
@@ -36,8 +56,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 ROOT = Path(__file__).parent.parent
 VIOLATION_LOG = ROOT / "violation_log" / "violations.jsonl"
+DEFAULT_REGISTRY = ROOT / "contract_registry" / "subscriptions.yaml"
+DEFAULT_LINEAGE = ROOT / "outputs" / "week4" / "lineage_snapshots.jsonl"
 
 
 def now_iso() -> str:
@@ -45,7 +69,7 @@ def now_iso() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Column → source file mapping (heuristic)
+# Column → source file mapping (heuristic fallback when lineage graph is empty)
 # ---------------------------------------------------------------------------
 
 COLUMN_FILE_MAP = {
@@ -53,10 +77,12 @@ COLUMN_FILE_MAP = {
     "extracted_facts": "src/week3/extractor.py",
     "entities": "src/week3/entity_linker.py",
     "extraction_model": "src/week3/extractor.py",
+    "processing_time_ms": "src/week3/extractor.py",
     "overall_verdict": "src/week2/courtroom.py",
     "scores": "src/week2/scorer.py",
     "sequence_number": "src/week5/aggregate.py",
     "event_type": "src/week5/event_store.py",
+    "payload": "src/week5/event_store.py",
     "nodes": "src/week4/cartographer.py",
     "edges": "src/week4/graph_builder.py",
     "total_tokens": "src/week7/contracts/ai_extensions.py",
@@ -76,7 +102,77 @@ PIPELINE_MAP = {
 
 
 # ---------------------------------------------------------------------------
-# Lineage graph utilities
+# Step 1 — Registry blast radius query
+# ---------------------------------------------------------------------------
+
+def load_registry(registry_path: Path | None = None) -> dict:
+    """
+    Load contract_registry/subscriptions.yaml.
+    Returns the parsed YAML dict, or an empty dict if the file doesn't exist.
+    """
+    path = registry_path or DEFAULT_REGISTRY
+    if not Path(path).exists():
+        print(f"  [WARN] Registry not found at {path}. Falling back to lineage-only blast radius.",
+              file=sys.stderr)
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def _field_matches(failing_field: str, breaking_field_entry: Any) -> bool:
+    """
+    Check if the failing field matches a breaking_field entry from the registry.
+    Entries can be a dict with 'field' key or a plain string.
+    """
+    if isinstance(breaking_field_entry, dict):
+        declared = breaking_field_entry.get("field", "")
+    else:
+        declared = str(breaking_field_entry)
+
+    # Normalize: strip array notation for comparison
+    norm_failing = failing_field.split("[")[0].split(".")[0].lower()
+    norm_declared = declared.split("[")[0].split(".")[0].lower()
+
+    return norm_failing in norm_declared or norm_declared in norm_failing
+
+
+def registry_blast_radius(
+    contract_id: str,
+    failing_field: str,
+    registry: dict,
+) -> list[dict]:
+    """
+    Step 1 — Query registry for subscribers to this contract whose
+    breaking_fields intersect with the failing field.
+
+    Returns list of subscriber dicts that are affected.
+    This is the authoritative subscriber list for blast radius computation.
+    In Tier 2+: replace this with GET /api/subscriptions?contract_id=X&field=Y
+    """
+    affected = []
+    subscriptions = registry.get("subscriptions", [])
+    for sub in subscriptions:
+        if sub.get("contract_id") != contract_id:
+            continue
+        breaking_fields = sub.get("breaking_fields", [])
+        for bf in breaking_fields:
+            if _field_matches(failing_field, bf):
+                reason = bf.get("reason", "") if isinstance(bf, dict) else ""
+                affected.append({
+                    "subscriber_id": sub["subscriber_id"],
+                    "subscriber_team": sub.get("subscriber_team", ""),
+                    "validation_mode": sub.get("validation_mode", "AUDIT"),
+                    "contact": sub.get("contact", ""),
+                    "fields_consumed": sub.get("fields_consumed", []),
+                    "breaking_field": bf.get("field", bf) if isinstance(bf, dict) else bf,
+                    "breaking_reason": reason,
+                })
+                break  # Only add each subscriber once per violation
+    return affected
+
+
+# ---------------------------------------------------------------------------
+# Step 2 — Lineage graph utilities (enrichment)
 # ---------------------------------------------------------------------------
 
 def load_latest_lineage(lineage_path: str | None) -> dict:
@@ -102,30 +198,26 @@ def load_latest_lineage(lineage_path: str | None) -> dict:
 
 def bfs_upstream(lineage: dict, failing_col: str, max_hops: int = 3) -> list[tuple[str, int]]:
     """
-    BFS from a known file for the failing column upward through the lineage graph.
+    BFS from the file producing the failing column upstream through the lineage graph.
     Returns list of (node_id, hop_count).
     """
     if not lineage:
-        # Fallback: use heuristic column→file map
         start_file = COLUMN_FILE_MAP.get(failing_col.split(".")[0])
         if start_file:
             return [(f"file::{start_file}", 0)]
         return []
 
     edges = lineage.get("edges", [])
-    # Build reverse adjacency: target → list of sources
     reverse: dict[str, list[str]] = defaultdict(list)
     for e in edges:
         reverse[e["target"]].append(e["source"])
 
     nodes = {n["node_id"]: n for n in lineage.get("nodes", [])}
 
-    # Identify starting node: the file that likely produces failing_col
     root_file = COLUMN_FILE_MAP.get(failing_col.split(".")[0])
     if root_file:
         start_id = f"file::{root_file}"
     else:
-        # Pick any node containing the column name
         candidates = [nid for nid in nodes if failing_col.lower() in nid.lower()]
         start_id = candidates[0] if candidates else None
 
@@ -148,43 +240,53 @@ def bfs_upstream(lineage: dict, failing_col: str, max_hops: int = 3) -> list[tup
     return result
 
 
-def bfs_downstream(lineage: dict, failing_col: str) -> list[str]:
+def bfs_downstream_depth(lineage: dict, subscriber_id: str) -> int:
     """
-    BFS forward from the file that produces the failing column.
-    Returns affected downstream node IDs.
+    Step 2 enrichment — compute the contamination depth of a registry subscriber
+    in the lineage graph. Returns the shortest hop count from the producer node
+    to any node that corresponds to the subscriber, or 1 as default.
     """
     if not lineage:
-        return []
+        return 1
 
     edges = lineage.get("edges", [])
     forward: dict[str, list[str]] = defaultdict(list)
     for e in edges:
         forward[e["source"]].append(e["target"])
 
-    root_file = COLUMN_FILE_MAP.get(failing_col.split(".")[0])
-    start_id = f"file::{root_file}" if root_file else None
-    if not start_id:
-        return []
+    nodes = list(lineage.get("nodes", []))
+    # Find any node whose label or node_id contains the subscriber hint
+    sub_hint = subscriber_id.split("-")[-1]  # e.g. "cartographer" from "week4-cartographer"
+    target_nodes = [
+        n["node_id"] for n in nodes
+        if sub_hint in n.get("node_id", "").lower() or sub_hint in n.get("label", "").lower()
+    ]
 
+    if not target_nodes:
+        return 1
+
+    # BFS from any start node to find min depth to target
     visited: set[str] = set()
-    queue: deque[str] = deque([start_id])
-    downstream: list[str] = []
+    queue: deque[tuple[str, int]] = deque()
+    for n in nodes:
+        queue.append((n["node_id"], 0))
 
+    best = 99
     while queue:
-        node_id = queue.popleft()
+        node_id, depth = queue.popleft()
         if node_id in visited:
             continue
         visited.add(node_id)
-        if node_id != start_id:
-            downstream.append(node_id)
+        if node_id in target_nodes:
+            best = min(best, depth)
         for tgt in forward.get(node_id, []):
-            queue.append(tgt)
+            queue.append((tgt, depth + 1))
 
-    return downstream
+    return best if best < 99 else 1
 
 
 # ---------------------------------------------------------------------------
-# Git integration
+# Step 3 — Git integration (cause attribution)
 # ---------------------------------------------------------------------------
 
 def git_log_for_file(file_path: str, days: int = 14) -> list[dict]:
@@ -255,21 +357,16 @@ def git_blame_lines(file_path: str, line_start: int, line_end: int) -> list[dict
 # Confidence score formula
 # ---------------------------------------------------------------------------
 
-def blame_confidence(
-    commit_timestamp: str,
-    hop_count: int,
-) -> float:
+def blame_confidence(commit_timestamp: str, hop_count: int) -> float:
     """
     base = 1.0 - (days_since_commit × 0.1)
     Reduce by 0.2 per lineage hop.
     Clamp to [0.05, 1.0].
     """
     try:
-        from datetime import datetime as dt, timezone as tz
-        # Parse commit timestamp (git format: 2025-01-14 09:00:00 +0300)
         ts_str = commit_timestamp.strip()[:19]
-        commit_dt = dt.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
-        days = (dt.now(tz.utc).replace(tzinfo=None) - commit_dt).days
+        commit_dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+        days = (datetime.now(timezone.utc).replace(tzinfo=None) - commit_dt).days
     except Exception:
         days = 0
 
@@ -278,81 +375,20 @@ def blame_confidence(
 
 
 # ---------------------------------------------------------------------------
-# Blast radius
+# Step 4 — Build blame chain
 # ---------------------------------------------------------------------------
 
-DOWNSTREAM_PIPELINES_MAP = {
-    "week3-document-refinery-extractions": [
-        "week4-lineage-generation",
-        "week7-violation-attributor",
-    ],
-    "week4-brownfield-cartographer": [
-        "week7-violation-attributor",
-        "week7-schema-contract",
-    ],
-    "week5-event-sourcing-platform": [
-        "week7-ai-contract-extension",
-        "week8-sentinel-pipeline",
-    ],
-}
-
-DOWNSTREAM_NODES_MAP = {
-    "week3-document-refinery-extractions": [
-        "file::src/week4/cartographer.py",
-        "file::src/week7/contracts/attributor.py",
-    ],
-    "week4-brownfield-cartographer": [
-        "file::src/week7/contracts/attributor.py",
-        "file::src/week7/contracts/runner.py",
-    ],
-}
-
-
-def compute_blast_radius(
-    contract_id: str,
-    check_id: str,
-    failing_col: str,
-    records_failing: int,
-    lineage: dict,
-) -> dict:
-    downstream_nodes = bfs_downstream(lineage, failing_col)
-    if not downstream_nodes:
-        downstream_nodes = DOWNSTREAM_NODES_MAP.get(contract_id, [])
-
-    pipelines = DOWNSTREAM_PIPELINES_MAP.get(contract_id, [])
-    for node in downstream_nodes:
-        file_path = node.replace("file::", "")
-        p = PIPELINE_MAP.get(file_path)
-        if p and p not in pipelines:
-            pipelines.append(p)
-
-    return {
-        "affected_nodes": downstream_nodes,
-        "affected_pipelines": pipelines,
-        "estimated_records": records_failing,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Main attribution logic
-# ---------------------------------------------------------------------------
-
-def attribute_violation(
-    check_result: dict,
-    contract_id: str,
-    lineage: dict,
-) -> dict:
+def build_blame_chain(failing_col: str, lineage: dict) -> list[dict]:
     """
-    Produce a violation record from a single FAIL check result.
+    Step 3 — Git blame for cause attribution.
+    Traverse upstream from the failing column's producing file,
+    run git log on each file, rank by temporal proximity.
+    Returns up to 5 blame candidates.
     """
-    col_raw = check_result.get("column_name", "")
-    failing_col = col_raw.split("[")[0].split(".")[0]  # strip array notation
-
     upstream_nodes = bfs_upstream(lineage, failing_col)
-
-    # Build blame chain (up to 5 candidates)
     blame_chain = []
     rank = 1
+
     for node_id, hops in upstream_nodes:
         if rank > 5:
             break
@@ -372,6 +408,7 @@ def attribute_violation(
                     "commit_timestamp": commit["commit_timestamp"],
                     "commit_message": commit["commit_message"],
                     "confidence_score": conf,
+                    "lineage_hops": hops,
                 })
                 rank += 1
         else:
@@ -379,32 +416,116 @@ def attribute_violation(
             blame_chain.append({
                 "rank": rank,
                 "file_path": file_path,
-                "commit_hash": "a" * 40,  # placeholder
+                "commit_hash": "a" * 40,
                 "author": "unknown@platform.dev",
                 "commit_timestamp": "2025-01-14 09:00:00 +0000",
                 "commit_message": f"feat: modify {failing_col} output format",
                 "confidence_score": blame_confidence("2025-01-14 09:00:00 +0000", hops),
+                "lineage_hops": hops,
             })
             rank += 1
 
     if not blame_chain:
+        fallback_file = COLUMN_FILE_MAP.get(failing_col, f"src/{failing_col}_producer.py")
         blame_chain.append({
             "rank": 1,
-            "file_path": COLUMN_FILE_MAP.get(failing_col, f"src/{failing_col}_producer.py"),
+            "file_path": fallback_file,
             "commit_hash": "b" * 40,
             "author": "platform@dev.null",
             "commit_timestamp": "2025-01-14 09:00:00 +0000",
             "commit_message": f"refactor: change {failing_col} computation",
             "confidence_score": 0.40,
+            "lineage_hops": 0,
         })
 
-    blast_radius = compute_blast_radius(
-        contract_id,
-        check_result["check_id"],
-        failing_col,
-        check_result.get("records_failing", 0),
-        lineage,
-    )
+    return blame_chain
+
+
+# ---------------------------------------------------------------------------
+# Main attribution logic
+# ---------------------------------------------------------------------------
+
+def attribute_violation(
+    check_result: dict,
+    contract_id: str,
+    lineage: dict,
+    registry: dict,
+) -> dict:
+    """
+    Produce a violation record from a single FAIL check result.
+    Uses the four-step attribution pipeline from Phase 2B spec.
+    """
+    col_raw = check_result.get("column_name", "")
+    failing_col = col_raw.split("[")[0].split(".")[0]  # strip array notation
+
+    # ── Step 1: Registry blast radius query ──────────────────────────────────
+    registry_subscribers = registry_blast_radius(contract_id, failing_col, registry)
+
+    # Build subscriber-id list and pipeline list from registry
+    subscriber_ids = [s["subscriber_id"] for s in registry_subscribers]
+    affected_pipelines = []
+    for sub in registry_subscribers:
+        sub_id = sub["subscriber_id"]
+        # Map subscriber_id → pipeline name heuristically
+        if "cartographer" in sub_id:
+            affected_pipelines.append("week4-lineage-generation")
+        elif "violation-attributor" in sub_id:
+            affected_pipelines.append("week7-violation-attributor")
+        elif "schema-contract" in sub_id:
+            affected_pipelines.append("week7-schema-contract")
+        elif "ai-contract" in sub_id:
+            affected_pipelines.append("week7-ai-contract-extension")
+        elif "courtroom" in sub_id:
+            affected_pipelines.append("week2-evaluation-pipeline")
+        else:
+            affected_pipelines.append(sub_id)
+
+    # ── Step 2: Lineage traversal for contamination depth enrichment ─────────
+    subscriber_enrichment = []
+    for sub in registry_subscribers:
+        depth = bfs_downstream_depth(lineage, sub["subscriber_id"])
+        subscriber_enrichment.append({
+            **sub,
+            "contamination_depth": depth,
+        })
+
+    # Also collect raw lineage downstream nodes for the affected_nodes list
+    lineage_downstream: list[str] = []
+    if lineage:
+        edges = lineage.get("edges", [])
+        forward: dict[str, list[str]] = defaultdict(list)
+        for e in edges:
+            forward[e["source"]].append(e["target"])
+        root_file = COLUMN_FILE_MAP.get(failing_col)
+        if root_file:
+            start_id = f"file::{root_file}"
+            visited: set[str] = set()
+            queue: deque[str] = deque([start_id])
+            while queue:
+                nid = queue.popleft()
+                if nid in visited:
+                    continue
+                visited.add(nid)
+                if nid != start_id:
+                    lineage_downstream.append(nid)
+                for tgt in forward.get(nid, []):
+                    queue.append(tgt)
+
+    # ── Step 3: Git blame for cause attribution ───────────────────────────────
+    blame_chain = build_blame_chain(failing_col, lineage)
+
+    # ── Step 4: Assemble violation record ─────────────────────────────────────
+    blast_radius = {
+        # Registry-sourced: authoritative subscriber list
+        "registry_subscribers": subscriber_enrichment,
+        # Lineage-enriched: transitive node list
+        "affected_nodes": lineage_downstream if lineage_downstream else
+                          [f"file::src/{s['subscriber_id'].replace('-', '/')}.py"
+                           for s in registry_subscribers],
+        "affected_pipelines": list(dict.fromkeys(affected_pipelines)),  # dedup, preserve order
+        "estimated_records": check_result.get("records_failing", 0),
+        "blast_radius_source": "registry+lineage" if registry_subscribers else "lineage-only",
+    }
 
     return {
         "violation_id": str(uuid.uuid4()),
@@ -443,8 +564,13 @@ def main() -> None:
     parser.add_argument("--report", required=True, help="Path to validation report JSON")
     parser.add_argument(
         "--lineage",
-        default=str(ROOT / "outputs" / "week4" / "lineage_snapshots.jsonl"),
+        default=str(DEFAULT_LINEAGE),
         help="Path to Week 4 lineage snapshots JSONL",
+    )
+    parser.add_argument(
+        "--registry",
+        default=str(DEFAULT_REGISTRY),
+        help="Path to contract_registry/subscriptions.yaml",
     )
     parser.add_argument(
         "--check-id",
@@ -458,6 +584,15 @@ def main() -> None:
 
     contract_id = report.get("contract_id", "unknown")
     lineage = load_latest_lineage(args.lineage)
+    registry = load_registry(Path(args.registry))
+
+    if registry:
+        subs = registry.get("subscriptions", [])
+        relevant = [s for s in subs if s.get("contract_id") == contract_id]
+        print(f"\n[ContractRegistry] Loaded {len(subs)} subscriptions total, "
+              f"{len(relevant)} for contract '{contract_id}'")
+    else:
+        print("\n[ContractRegistry] No registry loaded — blast radius is lineage-only")
 
     failures = [
         r for r in report.get("results", [])
@@ -472,20 +607,25 @@ def main() -> None:
     print(f"\n[ViolationAttributor] contract={contract_id}, failures={len(failures)}")
 
     for check_result in failures:
-        violation = attribute_violation(check_result, contract_id, lineage)
+        violation = attribute_violation(check_result, contract_id, lineage, registry)
         append_violation(violation)
-        print(f"\n  Violation: {violation['violation_id']}")
-        print(f"  Check    : {violation['check_id']}")
-        print(f"  Severity : {violation['severity']}")
+        print(f"\n  Violation : {violation['violation_id']}")
+        print(f"  Check     : {violation['check_id']}")
+        print(f"  Severity  : {violation['severity']}")
+
         chain = violation.get("blame_chain", [])
         if chain:
             top = chain[0]
-            print(f"  Blame #1 : {top['file_path']} | commit={top['commit_hash'][:12]}... | "
+            print(f"  Blame #1  : {top['file_path']} | commit={top['commit_hash'][:12]}... | "
                   f"conf={top['confidence_score']}")
+
         br = violation.get("blast_radius", {})
-        print(f"  Blast    : nodes={len(br.get('affected_nodes', []))}, "
-              f"pipelines={br.get('affected_pipelines', [])}, "
-              f"records={br.get('estimated_records', 0)}")
+        reg_subs = br.get("registry_subscribers", [])
+        print(f"  Blast src : {br.get('blast_radius_source', 'unknown')}")
+        print(f"  Subscribers ({len(reg_subs)}): "
+              f"{[s['subscriber_id'] for s in reg_subs]}")
+        print(f"  Pipelines : {br.get('affected_pipelines', [])}")
+        print(f"  Records   : {br.get('estimated_records', 0)}")
 
     print(f"\n  Violations appended → {VIOLATION_LOG.relative_to(ROOT)}")
 

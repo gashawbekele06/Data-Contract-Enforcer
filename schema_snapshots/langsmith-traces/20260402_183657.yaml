@@ -1,0 +1,131 @@
+kind: DataContract
+apiVersion: v3.0.0
+id: langsmith-traces
+info:
+  title: LangSmith Trace Exports
+  version: 1.0.0
+  owner: platform-observability-team
+  description: Auto-generated contract for runs. One record per unit of output. Generated
+    2026-04-02T18:36:57Z.
+  generated_by: ContractGenerator v1.0.0
+  generated_at: '2026-04-02T18:36:57Z'
+servers:
+  local:
+    type: local
+    path: outputs/traces/runs.jsonl
+    format: jsonl
+terms:
+  usage: Internal inter-system data contract. Do not publish externally.
+  limitations: All confidence fields must remain in 0.0–1.0 float range. Do not change
+    to percentage scale without a formal migration plan.
+schema:
+  id:
+    type: string
+    required: true
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+  name:
+    type: string
+    required: true
+    enum:
+    - EntityLinkerTool
+    - DocumentExtractionChain
+    - EmbeddingRetriever
+    - ScoringRubricLLM
+    - FactParserLLM
+    - ContractValidatorChain
+  run_type:
+    type: string
+    required: true
+    enum:
+    - llm
+    - chain
+    - tool
+    - retriever
+    - embedding
+  inputs:
+    type: object
+    required: true
+  outputs:
+    type: object
+    required: true
+  error:
+    type: string
+    required: false
+    nullable: true
+  start_time:
+    type: string
+    required: true
+    format: date-time
+    description: ISO 8601 timestamp
+  end_time:
+    type: string
+    required: true
+    format: date-time
+    description: ISO 8601 timestamp
+  total_tokens:
+    type: integer
+    required: true
+    minimum: 1303
+    maximum: 7296
+  prompt_tokens:
+    type: integer
+    required: true
+    minimum: 1086
+    maximum: 5883
+  completion_tokens:
+    type: integer
+    required: true
+    minimum: 216
+    maximum: 1463
+  total_cost:
+    type: number
+    required: true
+    minimum: 0.006513
+    maximum: 0.038844
+  tags:
+    type: array
+    required: true
+  parent_run_id:
+    type: string
+    required: false
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    nullable: true
+  session_id:
+    type: string
+    required: true
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+    unique: true
+quality:
+  type: SodaChecks
+  specification:
+    checks for runs:
+    - missing_count(id) = 0
+    - duplicate_count(id) = 0
+    - missing_count(name) = 0
+    - missing_count(run_type) = 0
+    - missing_count(start_time) = 0
+    - missing_count(end_time) = 0
+    - missing_count(total_tokens) = 0
+    - min(total_tokens) >= 0
+    - missing_count(prompt_tokens) = 0
+    - missing_count(completion_tokens) = 0
+    - missing_count(total_cost) = 0
+    - duplicate_count(parent_run_id) = 0
+    - missing_count(session_id) = 0
+    - duplicate_count(session_id) = 0
+    - row_count >= 1
+lineage:
+  upstream: []
+  downstream:
+  - id: week7-ai-contract-extension
+    description: AI Contract Extension enforces trace schema
+    fields_consumed:
+    - run_type
+    - total_tokens
+    - total_cost
+    breaking_if_changed:
+    - run_type
+    - total_tokens

@@ -1,12 +1,42 @@
 {
   "week3-document-refinery-extractions.processing_time_ms": {
-    "mean": 80880.58333333333,
-    "stddev": 191629.0214332566,
+    "mean": 80939.55,
+    "stddev": 191603.81806273537,
     "n": 60
   },
   "week5-event-sourcing-platform.sequence_number": {
     "mean": 5.0,
     "stddev": 4.836728170358491,
     "n": 100
+  },
+  "week2-digital-courtroom.overall_score": {
+    "mean": 3.0342,
+    "stddev": 0.7723383259918662,
+    "n": 50
+  },
+  "week2-digital-courtroom.confidence": {
+    "mean": 0.8434,
+    "stddev": 0.07888534692313695,
+    "n": 50
+  },
+  "langsmith-traces.total_tokens": {
+    "mean": 4314.76,
+    "stddev": 1611.702643359576,
+    "n": 50
+  },
+  "langsmith-traces.prompt_tokens": {
+    "mean": 3487.44,
+    "stddev": 1565.3586686867177,
+    "n": 50
+  },
+  "langsmith-traces.completion_tokens": {
+    "mean": 827.32,
+    "stddev": 373.5890157018287,
+    "n": 50
+  },
+  "langsmith-traces.total_cost": {
+    "mean": 0.022872120000000003,
+    "stddev": 0.007334930097576018,
+    "n": 50
   }
 }

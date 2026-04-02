@@ -1,0 +1,288 @@
+# contract_registry/subscriptions.yaml
+# ============================================================
+# Data Contract Enforcer — Tier 1 Contract Registry
+# ============================================================
+# This file is manually maintained.
+# Every inter-system data dependency must be listed here.
+# A subscription is a consumer's formal declaration of dependency.
+#
+# Structure:
+#   contract_id     — the producer's contract id (matches generated_contracts/*.yaml)
+#   subscriber_id   — the consuming system's identifier
+#   subscriber_team — the team that owns the consuming system
+#   fields_consumed — list of fields the consumer reads
+#   breaking_fields — fields whose change would break the consumer
+#   validation_mode — AUDIT | WARN | ENFORCE
+#   registered_at   — ISO 8601 timestamp of registration
+#   contact         — responsible contact for the subscribing system
+#
+# Dependency arrows (matches data-flow diagram in DOMAIN_NOTES.md):
+#   Week 1  ──► Week 2   (code_refs[].file used as target_ref)
+#   Week 3  ──► Week 4   (doc_id, extracted_facts become lineage node metadata)
+#   Week 4  ──► Week 7   (lineage graph used by ViolationAttributor)
+#   Week 5  ──► Week 7   (event payload validated against schema registry)
+#   LangSmith ──► Week 7  (trace schema enforced by AI Contract Extension)
+#   Week 2  ──► Week 7   (verdict records validated by AI Contract Extension)
+# ============================================================
+
+subscriptions:
+
+  # ──────────────────────────────────────────────────────────
+  # Week 1 → Week 2
+  # The Digital Courtroom uses code_refs[].file as target_ref
+  # for verdicts. If code_refs is removed or renamed the
+  # verdict target cannot be resolved.
+  # ──────────────────────────────────────────────────────────
+  - contract_id: week1-intent-code-correlator
+    subscriber_id: week2-digital-courtroom
+    subscriber_team: week2
+    fields_consumed:
+      - intent_id
+      - code_refs
+      - code_refs[].file
+      - code_refs[].confidence
+      - created_at
+    breaking_fields:
+      - field: code_refs
+        reason: >
+          Digital Courtroom uses code_refs[].file as target_ref for verdict records.
+          Removing or renaming this array breaks all cross-system referential integrity checks.
+      - field: intent_id
+        reason: >
+          Primary key used to correlate intent records with verdict records.
+          Any change to format (e.g., from UUID to integer) breaks the join.
+    validation_mode: ENFORCE
+    registered_at: '2025-01-10T09:00:00Z'
+    contact: week2-team@org.com
+
+  # ──────────────────────────────────────────────────────────
+  # Week 3 → Week 4
+  # The Brownfield Cartographer ingests extraction records
+  # to create lineage nodes for each processed document.
+  # confidence scale change (0.0–1.0 → 0–100) breaks ranking.
+  # ──────────────────────────────────────────────────────────
+  - contract_id: week3-document-refinery-extractions
+    subscriber_id: week4-brownfield-cartographer
+    subscriber_team: week4
+    fields_consumed:
+      - doc_id
+      - extracted_facts
+      - extracted_facts[].confidence
+      - extracted_facts[].text
+      - entities
+      - extraction_model
+    breaking_fields:
+      - field: extracted_facts[].confidence
+        reason: >
+          Used for lineage node confidence weighting and ranking.
+          Scale change from 0.0–1.0 to 0–100 silently corrupts all threshold checks
+          (e.g., nodes with confidence 87 pass a threshold of 0.5 instead of failing it).
+      - field: doc_id
+        reason: >
+          Primary key for the lineage node identity. Used as node_id in the
+          lineage graph. Any format change (e.g., from UUID to hash) breaks
+          all downstream graph traversals.
+      - field: entities[].type
+        reason: >
+          Entity type enum drives lineage node classification.
+          Removing or renaming enum values breaks entity-type-based graph queries.
+    validation_mode: ENFORCE
+    registered_at: '2025-01-10T09:00:00Z'
+    contact: week4-team@org.com
+
+  # ──────────────────────────────────────────────────────────
+  # Week 3 → Week 7 (AI Contract Extension)
+  # The Enforcer's AI extension uses confidence distributions
+  # to detect embedding drift and validate extraction quality.
+  # ──────────────────────────────────────────────────────────
+  - contract_id: week3-document-refinery-extractions
+    subscriber_id: week7-ai-contract-extension
+    subscriber_team: week7
+    fields_consumed:
+      - doc_id
+      - extracted_facts[].confidence
+      - extracted_facts[].text
+      - extraction_model
+    breaking_fields:
+      - field: extracted_facts[].confidence
+        reason: >
+          AI extension uses confidence as embedding drift baseline.
+          Scale change invalidates all historical baselines stored in
+          schema_snapshots/baselines.json and triggers false drift alerts.
+      - field: extracted_facts[].text
+        reason: >
+          Text content is embedded for semantic drift detection.
+          Structural changes (e.g., truncation policy changes) shift
+          the embedding centroid and may falsely trigger drift alerts.
+    validation_mode: AUDIT
+    registered_at: '2025-01-10T09:00:00Z'
+    contact: week7-team@org.com
+
+  # ──────────────────────────────────────────────────────────
+  # Week 4 → Week 7 (ViolationAttributor)
+  # The ViolationAttributor REQUIRES the lineage graph to
+  # perform blame-chain construction and blast radius BFS.
+  # This is the primary required dependency per Phase 2B spec.
+  # ──────────────────────────────────────────────────────────
+  - contract_id: week4-brownfield-cartographer
+    subscriber_id: week7-violation-attributor
+    subscriber_team: week7
+    fields_consumed:
+      - snapshot_id
+      - nodes
+      - nodes[].node_id
+      - nodes[].type
+      - nodes[].metadata
+      - edges
+      - edges[].source
+      - edges[].target
+      - edges[].relationship
+      - edges[].confidence
+      - git_commit
+      - captured_at
+    breaking_fields:
+      - field: nodes
+        reason: >
+          BFS traversal uses nodes[] as the graph vertex set.
+          Removing nodes or changing node_id format breaks all lineage traversals
+          and makes blame-chain construction impossible.
+      - field: edges
+        reason: >
+          BFS traversal uses edges[] for forward and reverse graph traversal.
+          Removing edges or changing relationship enum values breaks both
+          upstream (blame) and downstream (blast radius) traversals.
+      - field: nodes[].node_id
+        reason: >
+          node_id is the stable identifier used to correlate lineage nodes
+          with file paths for git blame integration.
+          Format change (e.g., from file::path to hash) breaks all file path extraction.
+      - field: git_commit
+        reason: >
+          40-char hex SHA is used to anchor blame chains to a specific repo state.
+          Format change breaks git log integration.
+    validation_mode: ENFORCE
+    registered_at: '2025-01-10T09:00:00Z'
+    contact: week7-team@org.com
+
+  # ──────────────────────────────────────────────────────────
+  # Week 5 → Week 7 (Schema Contract)
+  # The Enforcer validates event payloads against the event
+  # type's JSON Schema and checks sequence monotonicity.
+  # ──────────────────────────────────────────────────────────
+  - contract_id: week5-event-sourcing-platform
+    subscriber_id: week7-schema-contract
+    subscriber_team: week7
+    fields_consumed:
+      - event_id
+      - event_type
+      - aggregate_id
+      - sequence_number
+      - payload
+      - metadata
+      - schema_version
+      - occurred_at
+      - recorded_at
+    breaking_fields:
+      - field: event_type
+        reason: >
+          PascalCase event type is used to look up the JSON Schema for payload
+          validation in the event schema registry. Renaming or changing case
+          convention breaks schema lookup and disables all payload validation.
+      - field: payload
+        reason: >
+          Payload is validated against the event_type's JSON Schema.
+          Structural changes to any payload field without updating the schema
+          registry constitutes a silent breaking change.
+      - field: sequence_number
+        reason: >
+          Monotonic sequence check per aggregate_id is a core contract check.
+          Changing sequence numbering (e.g., restarting at 1 mid-stream) is a
+          CRITICAL violation that indicates event log corruption.
+      - field: recorded_at
+        reason: >
+          The temporal ordering invariant (recorded_at >= occurred_at) is a
+          cross-field contract check. Removing this field breaks the check.
+    validation_mode: ENFORCE
+    registered_at: '2025-01-10T09:00:00Z'
+    contact: week7-team@org.com
+
+  # ──────────────────────────────────────────────────────────
+  # LangSmith → Week 7 (AI Contract Extension)
+  # The AI Contract Extension enforces the trace schema and
+  # validates token count invariants and time ordering.
+  # ──────────────────────────────────────────────────────────
+  - contract_id: langsmith-traces
+    subscriber_id: week7-ai-contract-extension
+    subscriber_team: week7
+    fields_consumed:
+      - id
+      - name
+      - run_type
+      - inputs
+      - outputs
+      - error
+      - start_time
+      - end_time
+      - total_tokens
+      - prompt_tokens
+      - completion_tokens
+      - total_cost
+      - tags
+      - parent_run_id
+      - session_id
+    breaking_fields:
+      - field: run_type
+        reason: >
+          Enum field (llm|chain|tool|retriever|embedding) used for trace
+          classification and metric segmentation. Adding undeclared values
+          breaks the AI extension's coverage reporting. Removing existing
+          values breaks historical comparison.
+      - field: total_tokens
+        reason: >
+          Token count invariant (total_tokens = prompt_tokens + completion_tokens)
+          is a critical AI contract check. Changing semantics (e.g., adding
+          cached tokens to total_tokens without updating prompt/completion)
+          causes invariant failures across all traces.
+      - field: start_time
+        reason: >
+          Used with end_time to enforce the temporal ordering invariant
+          (end_time > start_time). Timezone format change or epoch shift
+          breaks all trace duration calculations.
+    validation_mode: AUDIT
+    registered_at: '2025-01-10T09:00:00Z'
+    contact: week7-team@org.com
+
+  # ──────────────────────────────────────────────────────────
+  # Week 2 → Week 7 (AI Contract Extension)
+  # Verdict records are validated for LLM output schema
+  # compliance by the AI Contract Extension.
+  # ──────────────────────────────────────────────────────────
+  - contract_id: week2-digital-courtroom
+    subscriber_id: week7-ai-contract-extension
+    subscriber_team: week7
+    fields_consumed:
+      - verdict_id
+      - overall_verdict
+      - overall_score
+      - scores
+      - confidence
+      - evaluated_at
+    breaking_fields:
+      - field: overall_verdict
+        reason: >
+          Enum (PASS|FAIL|WARN) is the primary LLM output schema check target.
+          Changing to integer codes or adding undeclared values breaks the
+          AI extension's violation rate tracking.
+      - field: scores
+        reason: >
+          score values (int 1–5) are validated by the AI extension.
+          Scale change (e.g., 1–10) or type change (float) breaks all
+          score distribution checks and trend detection.
+      - field: confidence
+        reason: >
+          float 0.0–1.0 confidence is used in the AI extension's LLM output
+          quality assessment. Scale change (0–100) causes all distribution
+          checks to fail and corrupts the violation_rate metric.
+    validation_mode: ENFORCE
+    registered_at: '2025-01-10T09:00:00Z'
+    contact: week7-team@org.com

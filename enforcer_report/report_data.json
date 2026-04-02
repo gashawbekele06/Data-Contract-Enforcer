@@ -1,16 +1,16 @@
 {
-  "report_id": "3fcdfd5e-7cfb-4b77-88d2-0357295c2543",
-  "generated_at": "2026-03-31T22:51:36Z",
-  "report_date": "2026-03-31",
+  "report_id": "649e60fd-0e74-4ec5-9490-76935ee40046",
+  "generated_at": "2026-04-02T18:41:18Z",
+  "report_date": "2026-04-02",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
-  "data_health_score": 78,
-  "health_narrative": "78/100 \u2014 Caution: minor violations present. Review recommended.",
+  "data_health_score": 79,
+  "health_narrative": "79/100 \u2014 Caution: minor violations present. Review recommended.",
   "validation_summary": {
-    "total_checks": 134,
-    "passed": 131,
-    "failed": 3,
+    "total_checks": 1321,
+    "passed": 1311,
+    "failed": 10,
     "warned": 0,
-    "reports_analyzed": 5
+    "reports_analyzed": 50
   },
   "violations_this_week": {
     "total": 2,
@@ -20,7 +20,7 @@
     },
     "top_violations": [
       {
-        "violation_id": "dd54ad39-44b6-4521-bb4f-ac8631633922",
+        "violation_id": "7ade6b9c-894c-447b-9f0d-197d6278ea2a",
         "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
         "severity": "CRITICAL",
         "system": "week3-document-refinery-extractions",
@@ -29,13 +29,13 @@
         "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
       },
       {
-        "violation_id": "0781e455-406d-4b61-8a47-da6937c9b632",
-        "check_id": "week3-document-refinery-extractions.processing_time_ms.range",
+        "violation_id": "5692f759-471e-40f6-9202-d2fcd224acdb",
+        "check_id": "ai_extensions.embedding_drift",
         "severity": "HIGH",
         "system": "week3-document-refinery-extractions",
-        "field": "processing_time_ms",
-        "message": "processing_time_ms range violation: actual [0.0000, 1364530.0000] vs expected [1, None]. ",
-        "downstream_impact": "Affects 2 downstream node(s): file::src/week4/cartographer.py, file::src/week7/contracts/attributor.py"
+        "field": "extracted_facts[*].text",
+        "message": "Embedding drift FAIL: 0.9534 (threshold=0.15)",
+        "downstream_impact": "No downstream consumers identified in lineage graph."
       }
     ]
   },
@@ -47,18 +47,34 @@
       "backward_compatible": false,
       "compatibility_verdict": "BACKWARD_INCOMPATIBLE",
       "required_action": "Tighter range may break existing producers. Migration plan required."
+    },
+    {
+      "contract_id": "week3-document-refinery-extractions",
+      "change_type": "range_tightened",
+      "column": "processing_time_ms",
+      "backward_compatible": false,
+      "compatibility_verdict": "BACKWARD_INCOMPATIBLE",
+      "required_action": "Tighter range may break existing producers. Migration plan required."
+    },
+    {
+      "contract_id": "week3-document-refinery-extractions",
+      "change_type": "range_widened",
+      "column": "processing_time_ms",
+      "backward_compatible": true,
+      "compatibility_verdict": "FULL_COMPATIBLE",
+      "required_action": "None. Wider range is backward compatible."
     }
   ],
   "ai_risk_assessment": {
-    "overall_ai_status": "GREEN",
-    "embedding_drift_status": "BASELINE_SET",
-    "embedding_drift_score": 0.0,
+    "overall_ai_status": "AMBER",
+    "embedding_drift_status": "FAIL",
+    "embedding_drift_score": 0.953351,
     "embedding_threshold": 0.15,
     "prompt_input_violation_rate": 0.0,
     "llm_output_violation_rate": 0.0,
     "llm_output_trend": "stable",
     "trace_schema_status": "PASS",
-    "narrative": "All AI contract checks are within acceptable bounds. The system is consuming reliable data."
+    "narrative": "One or more AI contract checks require attention. Review the details above and run ai_extensions.py for the latest metrics."
   },
   "recommended_actions": [
     {
@@ -67,16 +83,21 @@
       "action": "Fix field 'extracted_facts[*].confidence' in contract 'week3-document-refinery-extractions': extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.. Locate change in src/week3/extractor.py and revert or update contract clause 'week3-document-refinery-extractions.extracted_facts.confidence.range'.",
       "affected_pipelines": [
         "week4-lineage-generation",
-        "week7-violation-attributor"
+        "week7-ai-contract-extension"
       ]
     },
     {
       "priority": 2,
       "severity": "HIGH",
-      "action": "Fix field 'processing_time_ms' in contract 'week3-document-refinery-extractions': processing_time_ms range violation: actual [0.0000, 1364530.0000] vs expected [1, None]. . Locate change in src/processing_time_ms_producer.py and revert or update contract clause 'week3-document-refinery-extractions.processing_time_ms.range'.",
+      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9534 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
+      "affected_pipelines": []
+    },
+    {
+      "priority": 3,
+      "severity": "HIGH",
+      "action": "Investigate embedding drift in extracted_facts[*].text. Re-run contracts/ai_extensions.py --set-baseline after confirming the distribution shift is intentional.",
       "affected_pipelines": [
-        "week4-lineage-generation",
-        "week7-violation-attributor"
+        "week3-document-extraction-pipeline"
       ]
     }
   ]
