@@ -1,0 +1,16 @@
+{
+  "analysis_id": "673f531d-979b-467e-8fd5-05a64b271e2d",
+  "contract_id": "langsmith-traces",
+  "snapshot_a": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\langsmith-traces\\20260402_193040.yaml",
+  "snapshot_b": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\langsmith-traces\\20260402_193135.yaml",
+  "analyzed_at": "2026-04-02T19:31:36Z",
+  "compatibility_verdict": "FULL_COMPATIBLE",
+  "total_changes": 0,
+  "breaking_changes": 0,
+  "compatible_changes": 0,
+  "changes": [],
+  "human_summary": [],
+  "migration_checklist": [],
+  "rollback_plan": "No rollback needed \u2014 all changes are backward compatible.",
+  "blast_radius_note": "No blast radius action required."
+}

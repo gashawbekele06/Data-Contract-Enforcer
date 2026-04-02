@@ -2,7 +2,7 @@ version: 2
 models:
 - name: intent_records
   description: Auto-generated contract for intent records. One record per unit of
-    output. Generated 2026-04-02T18:41:17Z.
+    output. Generated 2026-04-02T19:31:55Z.
   columns:
   - name: intent_id
     tests:

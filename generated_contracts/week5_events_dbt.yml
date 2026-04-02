@@ -2,7 +2,7 @@ version: 2
 models:
 - name: events
   description: Auto-generated contract for events. One record per unit of output.
-    Generated 2026-04-02T18:41:17Z.
+    Generated 2026-04-02T19:31:55Z.
   columns:
   - name: event_id
     tests:

@@ -2,7 +2,7 @@ version: 2
 models:
 - name: lineage_snapshots
   description: Auto-generated contract for lineage snapshots. One record per unit
-    of output. Generated 2026-04-02T18:41:17Z.
+    of output. Generated 2026-04-02T19:31:55Z.
   columns:
   - name: snapshot_id
     tests:

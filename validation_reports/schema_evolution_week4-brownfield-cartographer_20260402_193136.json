@@ -1,0 +1,16 @@
+{
+  "analysis_id": "0d7d8b12-fb8f-4ede-b730-f7e65671d379",
+  "contract_id": "week4-brownfield-cartographer",
+  "snapshot_a": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week4-brownfield-cartographer\\20260402_193040.yaml",
+  "snapshot_b": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week4-brownfield-cartographer\\20260402_193135.yaml",
+  "analyzed_at": "2026-04-02T19:31:36Z",
+  "compatibility_verdict": "FULL_COMPATIBLE",
+  "total_changes": 0,
+  "breaking_changes": 0,
+  "compatible_changes": 0,
+  "changes": [],
+  "human_summary": [],
+  "migration_checklist": [],
+  "rollback_plan": "No rollback needed \u2014 all changes are backward compatible.",
+  "blast_radius_note": "No blast radius action required."
+}

@@ -1,0 +1,16 @@
+{
+  "analysis_id": "7fe3e1b8-c83f-4387-8365-1aff82e38c45",
+  "contract_id": "week2-digital-courtroom",
+  "snapshot_a": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week2-digital-courtroom\\20260402_193135.yaml",
+  "snapshot_b": "C:\\Users\\gasha\\OneDrive\\Desktop\\TRP1\\Week 7\\Data-Contract-Enforcer\\schema_snapshots\\week2-digital-courtroom\\20260402_193155.yaml",
+  "analyzed_at": "2026-04-02T19:32:22Z",
+  "compatibility_verdict": "FULL_COMPATIBLE",
+  "total_changes": 0,
+  "breaking_changes": 0,
+  "compatible_changes": 0,
+  "changes": [],
+  "human_summary": [],
+  "migration_checklist": [],
+  "rollback_plan": "No rollback needed \u2014 all changes are backward compatible.",
+  "blast_radius_note": "No blast radius action required."
+}
