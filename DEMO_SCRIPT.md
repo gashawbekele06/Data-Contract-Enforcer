@@ -227,9 +227,9 @@ PYTHONIOENCODING=utf-8 py -3 contracts/report_generator.py
 
 **[Point at terminal output — highlight:]**
 ```
-Reports analyzed : 48
-Total checks     : 1,224
-Passed           : 1,224   Failed : 0
+Reports analyzed : 6
+Total checks     : 266
+Passed           : 266   Failed : 0
 Health Score     : 100 / 100
 ```
 
@@ -301,7 +301,7 @@ cat enforcer_report/report_data.json
 
 ## KEY NUMBERS TO MENTION
 
-- **1,224** total contract checks across 6 datasets
+- **266** total contract checks across 6 datasets (6 reports · 1 per dataset)
 - **100/100** data health score (formula: passed/total × 100 − critical_violations × 20)
 - **18** clauses in the week3 contract (9 schema + 9 quality)
 - **7** subscriptions in the contract registry (Tier 1)

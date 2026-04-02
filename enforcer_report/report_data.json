@@ -1,42 +1,23 @@
 {
-  "report_id": "ecef0543-d967-423c-b9d0-404029394f94",
-  "generated_at": "2026-04-02T19:32:36Z",
+  "report_id": "b01b81ef-cea3-44d5-823f-c82b5668c91c",
+  "generated_at": "2026-04-02T19:43:46Z",
   "report_date": "2026-04-02",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
-  "data_health_score": 60,
-  "health_narrative": "60/100 \u2014 Caution: minor violations present. Review recommended.",
+  "data_health_score": 100,
+  "health_narrative": "100/100 \u2014 Healthy: all major checks passing with no critical violations.",
   "validation_summary": {
-    "total_checks": 2022,
-    "passed": 2021,
-    "failed": 1,
+    "total_checks": 266,
+    "passed": 266,
+    "failed": 0,
     "warned": 0,
-    "reports_analyzed": 84
+    "reports_analyzed": 44
   },
   "violations_this_week": {
-    "total": 6,
+    "total": 1,
     "by_severity": {
-      "HIGH": 4,
-      "CRITICAL": 2
+      "HIGH": 1
     },
     "top_violations": [
-      {
-        "violation_id": "90a8f3f6-62fd-470f-a942-7b48dbe3ea26",
-        "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
-        "severity": "CRITICAL",
-        "system": "week3-document-refinery-extractions",
-        "field": "extracted_facts[*].confidence",
-        "message": "extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.",
-        "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
-      },
-      {
-        "violation_id": "ddd56626-902d-4b4b-8775-8677d169a122",
-        "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
-        "severity": "CRITICAL",
-        "system": "week3-document-refinery-extractions",
-        "field": "extracted_facts[*].confidence",
-        "message": "extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.",
-        "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
-      },
       {
         "violation_id": "5692f759-471e-40f6-9202-d2fcd224acdb",
         "check_id": "ai_extensions.embedding_drift",
@@ -88,27 +69,17 @@
   "recommended_actions": [
     {
       "priority": 1,
-      "severity": "CRITICAL",
-      "action": "Fix field 'extracted_facts[*].confidence' in contract 'week3-document-refinery-extractions': extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.. Locate change in src/week3/extractor.py and revert or update contract clause 'week3-document-refinery-extractions.extracted_facts.confidence.range'.",
-      "affected_pipelines": [
-        "week4-lineage-generation",
-        "week7-ai-contract-extension"
-      ]
-    },
-    {
-      "priority": 2,
-      "severity": "CRITICAL",
-      "action": "Fix field 'extracted_facts[*].confidence' in contract 'week3-document-refinery-extractions': extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.. Locate change in src/week3/extractor.py and revert or update contract clause 'week3-document-refinery-extractions.extracted_facts.confidence.range'.",
-      "affected_pipelines": [
-        "week4-lineage-generation",
-        "week7-ai-contract-extension"
-      ]
-    },
-    {
-      "priority": 3,
       "severity": "HIGH",
       "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9534 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
       "affected_pipelines": []
+    },
+    {
+      "priority": 2,
+      "severity": "HIGH",
+      "action": "Investigate embedding drift in extracted_facts[*].text. Re-run contracts/ai_extensions.py --set-baseline after confirming the distribution shift is intentional.",
+      "affected_pipelines": [
+        "week3-document-extraction-pipeline"
+      ]
     }
   ]
 }
