@@ -1,12 +1,12 @@
 {
-  "report_id": "f54623ee-d92c-4882-9f72-0e6c0879e4ce",
+  "report_id": "e6144b6d-c4dd-497d-8f0d-e09d852d62c7",
   "contract_id": "langsmith-traces",
   "snapshot_id": "4dc00f9078a122c1b7f66c223b98d609c86c50307b04907dfeaf5f646c370bc6",
-  "run_timestamp": "2026-04-02T18:36:18Z",
+  "run_timestamp": "2026-04-02T18:48:14Z",
   "injected_violation": false,
   "total_checks": 76,
-  "passed": 75,
-  "failed": 1,
+  "passed": 76,
+  "failed": 0,
   "warned": 0,
   "errored": 0,
   "results": [
@@ -782,19 +782,13 @@
       "check_id": "langsmith-traces.parent_run_id.unique",
       "column_name": "parent_run_id",
       "check_type": "unique",
-      "status": "FAIL",
-      "actual_value": "duplicates=7",
-      "expected": "duplicates=0",
-      "severity": "CRITICAL",
-      "records_failing": 7,
-      "sample_failing": [
-        "45b8a9d1-521c-44cf-a35b-e5d188f9dccb",
-        "dff01f24-c0ba-4e7e-a189-c62d5963a950",
-        "dff01f24-c0ba-4e7e-a189-c62d5963a950",
-        "11387f7e-1bed-4c71-b0d8-84eb79498015",
-        "a47b9033-5be6-41ea-8762-b22953c53388"
-      ],
-      "message": "parent_run_id has 7 duplicate values."
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "Uniqueness not required."
     },
     {
       "check_id": "langsmith-traces.parent_run_id.format",

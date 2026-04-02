@@ -1,33 +1,23 @@
 {
-  "report_id": "649e60fd-0e74-4ec5-9490-76935ee40046",
-  "generated_at": "2026-04-02T18:41:18Z",
+  "report_id": "dcbef22e-d2fb-42ee-b464-1205801eedd3",
+  "generated_at": "2026-04-02T18:48:23Z",
   "report_date": "2026-04-02",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
-  "data_health_score": 79,
-  "health_narrative": "79/100 \u2014 Caution: minor violations present. Review recommended.",
+  "data_health_score": 100,
+  "health_narrative": "100/100 \u2014 Healthy: all major checks passing with no critical violations.",
   "validation_summary": {
-    "total_checks": 1321,
-    "passed": 1311,
-    "failed": 10,
+    "total_checks": 1224,
+    "passed": 1224,
+    "failed": 0,
     "warned": 0,
-    "reports_analyzed": 50
+    "reports_analyzed": 48
   },
   "violations_this_week": {
-    "total": 2,
+    "total": 1,
     "by_severity": {
-      "CRITICAL": 1,
       "HIGH": 1
     },
     "top_violations": [
-      {
-        "violation_id": "7ade6b9c-894c-447b-9f0d-197d6278ea2a",
-        "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
-        "severity": "CRITICAL",
-        "system": "week3-document-refinery-extractions",
-        "field": "extracted_facts[*].confidence",
-        "message": "extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.",
-        "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
-      },
       {
         "violation_id": "5692f759-471e-40f6-9202-d2fcd224acdb",
         "check_id": "ai_extensions.embedding_drift",
@@ -79,21 +69,12 @@
   "recommended_actions": [
     {
       "priority": 1,
-      "severity": "CRITICAL",
-      "action": "Fix field 'extracted_facts[*].confidence' in contract 'week3-document-refinery-extractions': extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.. Locate change in src/week3/extractor.py and revert or update contract clause 'week3-document-refinery-extractions.extracted_facts.confidence.range'.",
-      "affected_pipelines": [
-        "week4-lineage-generation",
-        "week7-ai-contract-extension"
-      ]
-    },
-    {
-      "priority": 2,
       "severity": "HIGH",
       "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9534 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
       "affected_pipelines": []
     },
     {
-      "priority": 3,
+      "priority": 2,
       "severity": "HIGH",
       "action": "Investigate embedding drift in extracted_facts[*].text. Re-run contracts/ai_extensions.py --set-baseline after confirming the distribution shift is intentional.",
       "affected_pipelines": [

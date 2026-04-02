@@ -1,18 +1,18 @@
 {
-  "report_id": "10178659-fe1d-4eee-b40b-7aca34cf3c12",
-  "contract_id": "week3-document-refinery-extractions",
-  "snapshot_id": "b2285f46834ec51a78cb0e56d14a3b32c72aeae5cbb3777dd25b14a86bad5848",
-  "run_timestamp": "2026-03-31T22:48:02Z",
-  "injected_violation": true,
-  "total_checks": 41,
-  "passed": 39,
-  "failed": 2,
+  "report_id": "eea6e27a-5448-4f75-bc13-23c90da1386c",
+  "contract_id": "week2-digital-courtroom",
+  "snapshot_id": "8b56bfc2f29d5ba8e48612f2330f4d4adf3f807892015e39dea44ac30d94ff30",
+  "run_timestamp": "2026-04-02T18:48:13Z",
+  "injected_violation": false,
+  "total_checks": 49,
+  "passed": 49,
+  "failed": 0,
   "warned": 0,
   "errored": 0,
   "results": [
     {
-      "check_id": "week3-document-refinery-extractions.doc_id.required",
-      "column_name": "doc_id",
+      "check_id": "week2-digital-courtroom.verdict_id.required",
+      "column_name": "verdict_id",
       "check_type": "required",
       "status": "PASS",
       "actual_value": "null_count=0",
@@ -23,8 +23,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.doc_id.unique",
-      "column_name": "doc_id",
+      "check_id": "week2-digital-courtroom.verdict_id.unique",
+      "column_name": "verdict_id",
       "check_type": "unique",
       "status": "PASS",
       "actual_value": "duplicates=0",
@@ -35,8 +35,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.doc_id.format",
-      "column_name": "doc_id",
+      "check_id": "week2-digital-courtroom.verdict_id.format",
+      "column_name": "verdict_id",
       "check_type": "format",
       "status": "PASS",
       "actual_value": "all match format=uuid",
@@ -47,8 +47,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.doc_id.pattern",
-      "column_name": "doc_id",
+      "check_id": "week2-digital-courtroom.verdict_id.pattern",
+      "column_name": "verdict_id",
       "check_type": "pattern",
       "status": "PASS",
       "actual_value": "all match pattern=^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -59,8 +59,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.doc_id.enum",
-      "column_name": "doc_id",
+      "check_id": "week2-digital-courtroom.verdict_id.enum",
+      "column_name": "verdict_id",
       "check_type": "enum",
       "status": "PASS",
       "actual_value": "N/A",
@@ -71,8 +71,8 @@
       "message": "No enum check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.doc_id.range",
-      "column_name": "doc_id",
+      "check_id": "week2-digital-courtroom.verdict_id.range",
+      "column_name": "verdict_id",
       "check_type": "range",
       "status": "PASS",
       "actual_value": "N/A",
@@ -83,8 +83,8 @@
       "message": "No range check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_path.required",
-      "column_name": "source_path",
+      "check_id": "week2-digital-courtroom.target_ref.required",
+      "column_name": "target_ref",
       "check_type": "required",
       "status": "PASS",
       "actual_value": "null_count=0",
@@ -95,8 +95,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_path.unique",
-      "column_name": "source_path",
+      "check_id": "week2-digital-courtroom.target_ref.unique",
+      "column_name": "target_ref",
       "check_type": "unique",
       "status": "PASS",
       "actual_value": "N/A",
@@ -107,8 +107,8 @@
       "message": "Uniqueness not required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_path.format",
-      "column_name": "source_path",
+      "check_id": "week2-digital-courtroom.target_ref.format",
+      "column_name": "target_ref",
       "check_type": "format",
       "status": "PASS",
       "actual_value": "N/A",
@@ -119,8 +119,8 @@
       "message": "No format check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_path.pattern",
-      "column_name": "source_path",
+      "check_id": "week2-digital-courtroom.target_ref.pattern",
+      "column_name": "target_ref",
       "check_type": "pattern",
       "status": "PASS",
       "actual_value": "N/A",
@@ -131,20 +131,20 @@
       "message": "No pattern check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_path.enum",
-      "column_name": "source_path",
+      "check_id": "week2-digital-courtroom.target_ref.enum",
+      "column_name": "target_ref",
       "check_type": "enum",
       "status": "PASS",
-      "actual_value": "N/A",
-      "expected": "N/A",
+      "actual_value": "all in allowed set",
+      "expected": "allowed=['src/week4/cartographer.py', 'src/week2/courtroom.py', 'src/week7/contracts/runner.py', 'src/week5/event_store.py', 'src/week5/aggregate.py', 'src/week3/extractor.py', 'src/week7/contracts/generator.py', 'src/week4/graph_builder.py', 'src/week1/correlator.py', 'src/week3/fact_parser.py']",
       "severity": "LOW",
       "records_failing": 0,
       "sample_failing": [],
-      "message": "No enum check required."
+      "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_path.range",
-      "column_name": "source_path",
+      "check_id": "week2-digital-courtroom.target_ref.range",
+      "column_name": "target_ref",
       "check_type": "range",
       "status": "PASS",
       "actual_value": "N/A",
@@ -155,8 +155,8 @@
       "message": "No range check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_hash.required",
-      "column_name": "source_hash",
+      "check_id": "week2-digital-courtroom.rubric_id.required",
+      "column_name": "rubric_id",
       "check_type": "required",
       "status": "PASS",
       "actual_value": "null_count=0",
@@ -167,8 +167,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_hash.unique",
-      "column_name": "source_hash",
+      "check_id": "week2-digital-courtroom.rubric_id.unique",
+      "column_name": "rubric_id",
       "check_type": "unique",
       "status": "PASS",
       "actual_value": "N/A",
@@ -179,8 +179,8 @@
       "message": "Uniqueness not required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_hash.format",
-      "column_name": "source_hash",
+      "check_id": "week2-digital-courtroom.rubric_id.format",
+      "column_name": "rubric_id",
       "check_type": "format",
       "status": "PASS",
       "actual_value": "all match format=sha256",
@@ -191,8 +191,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_hash.pattern",
-      "column_name": "source_hash",
+      "check_id": "week2-digital-courtroom.rubric_id.pattern",
+      "column_name": "rubric_id",
       "check_type": "pattern",
       "status": "PASS",
       "actual_value": "all match pattern=^[a-f0-9]{64}$",
@@ -203,134 +203,20 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.source_hash.enum",
-      "column_name": "source_hash",
-      "check_type": "enum",
-      "status": "PASS",
-      "actual_value": "N/A",
-      "expected": "N/A",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": "No enum check required."
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.source_hash.range",
-      "column_name": "source_hash",
-      "check_type": "range",
-      "status": "PASS",
-      "actual_value": "N/A",
-      "expected": "N/A",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": "No range check required."
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
-      "column_name": "extracted_facts[*].confidence",
-      "check_type": "range",
-      "status": "FAIL",
-      "actual_value": "max=97.0000, mean=84.4053",
-      "expected": "max<=1.0, min>=0.0",
-      "severity": "CRITICAL",
-      "records_failing": 264,
-      "sample_failing": [
-        "ff0de833-b724-4cad-b87b-f428b8614887",
-        "2501d007-7531-43db-9117-e35fa204aea8",
-        "5d85e95f-8c57-4219-bfe3-91db4f8b2735",
-        "ceef7b9f-d85e-488f-a170-8199404e3df1",
-        "7ecbba75-6573-4704-b769-1a26a18e5c49"
-      ],
-      "message": "extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected."
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extracted_facts.required",
-      "column_name": "extracted_facts",
-      "check_type": "required",
-      "status": "PASS",
-      "actual_value": "null_count=0",
-      "expected": "null_count=0",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": ""
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.entities.required",
-      "column_name": "entities",
-      "check_type": "required",
-      "status": "PASS",
-      "actual_value": "null_count=0",
-      "expected": "null_count=0",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": ""
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extraction_model.required",
-      "column_name": "extraction_model",
-      "check_type": "required",
-      "status": "PASS",
-      "actual_value": "null_count=0",
-      "expected": "null_count=0",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": ""
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extraction_model.unique",
-      "column_name": "extraction_model",
-      "check_type": "unique",
-      "status": "PASS",
-      "actual_value": "N/A",
-      "expected": "N/A",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": "Uniqueness not required."
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extraction_model.format",
-      "column_name": "extraction_model",
-      "check_type": "format",
-      "status": "PASS",
-      "actual_value": "N/A",
-      "expected": "N/A",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": "No format check required."
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extraction_model.pattern",
-      "column_name": "extraction_model",
-      "check_type": "pattern",
-      "status": "PASS",
-      "actual_value": "all match pattern=^(claude|gpt)-",
-      "expected": "pattern=^(claude|gpt)-",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": ""
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extraction_model.enum",
-      "column_name": "extraction_model",
+      "check_id": "week2-digital-courtroom.rubric_id.enum",
+      "column_name": "rubric_id",
       "check_type": "enum",
       "status": "PASS",
       "actual_value": "all in allowed set",
-      "expected": "allowed=['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'gpt-4o-2024-08-06']",
+      "expected": "allowed=['3ebb9d6fbc87433443d51803b2bb5f51ee043994927fbeae4f888afeaa8af5f8', 'ce25eef617f094f6a9d156df0b9570d39219cc16d540a68d641d5fdb262218e7', '6f481d7b594599c80d046c57d9d8e96c34c4f669ff5a02dd8ecec2b8c9474111', '9577fda02b62a7c03ae35d9893ef393acc012723200a477d881ef87a51c6d561']",
       "severity": "LOW",
       "records_failing": 0,
       "sample_failing": [],
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.extraction_model.range",
-      "column_name": "extraction_model",
+      "check_id": "week2-digital-courtroom.rubric_id.range",
+      "column_name": "rubric_id",
       "check_type": "range",
       "status": "PASS",
       "actual_value": "N/A",
@@ -341,8 +227,8 @@
       "message": "No range check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.processing_time_ms.required",
-      "column_name": "processing_time_ms",
+      "check_id": "week2-digital-courtroom.rubric_version.required",
+      "column_name": "rubric_version",
       "check_type": "required",
       "status": "PASS",
       "actual_value": "null_count=0",
@@ -353,8 +239,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.processing_time_ms.unique",
-      "column_name": "processing_time_ms",
+      "check_id": "week2-digital-courtroom.rubric_version.unique",
+      "column_name": "rubric_version",
       "check_type": "unique",
       "status": "PASS",
       "actual_value": "N/A",
@@ -365,20 +251,20 @@
       "message": "Uniqueness not required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.processing_time_ms.format",
-      "column_name": "processing_time_ms",
+      "check_id": "week2-digital-courtroom.rubric_version.format",
+      "column_name": "rubric_version",
       "check_type": "format",
       "status": "PASS",
-      "actual_value": "N/A",
-      "expected": "N/A",
+      "actual_value": "all match format=semver",
+      "expected": "format=semver",
       "severity": "LOW",
       "records_failing": 0,
       "sample_failing": [],
-      "message": "No format check required."
+      "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.processing_time_ms.pattern",
-      "column_name": "processing_time_ms",
+      "check_id": "week2-digital-courtroom.rubric_version.pattern",
+      "column_name": "rubric_version",
       "check_type": "pattern",
       "status": "PASS",
       "actual_value": "N/A",
@@ -389,8 +275,8 @@
       "message": "No pattern check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.processing_time_ms.enum",
-      "column_name": "processing_time_ms",
+      "check_id": "week2-digital-courtroom.rubric_version.enum",
+      "column_name": "rubric_version",
       "check_type": "enum",
       "status": "PASS",
       "actual_value": "N/A",
@@ -401,24 +287,20 @@
       "message": "No enum check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.processing_time_ms.range",
-      "column_name": "processing_time_ms",
+      "check_id": "week2-digital-courtroom.rubric_version.range",
+      "column_name": "rubric_version",
       "check_type": "range",
-      "status": "FAIL",
-      "actual_value": "min=0.0000, max=1364530.0000, mean=95611.6400",
-      "expected": "min>=1, max<=None",
-      "severity": "HIGH",
-      "records_failing": 5,
-      "sample_failing": [
-        "11",
-        "12",
-        "13"
-      ],
-      "message": "processing_time_ms range violation: actual [0.0000, 1364530.0000] vs expected [1, None]. "
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No range check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.token_count.required",
-      "column_name": "token_count",
+      "check_id": "week2-digital-courtroom.scores.required",
+      "column_name": "scores",
       "check_type": "required",
       "status": "PASS",
       "actual_value": "null_count=0",
@@ -429,8 +311,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.extracted_at.required",
-      "column_name": "extracted_at",
+      "check_id": "week2-digital-courtroom.overall_verdict.required",
+      "column_name": "overall_verdict",
       "check_type": "required",
       "status": "PASS",
       "actual_value": "null_count=0",
@@ -441,8 +323,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.extracted_at.unique",
-      "column_name": "extracted_at",
+      "check_id": "week2-digital-courtroom.overall_verdict.unique",
+      "column_name": "overall_verdict",
       "check_type": "unique",
       "status": "PASS",
       "actual_value": "N/A",
@@ -453,8 +335,224 @@
       "message": "Uniqueness not required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.extracted_at.format",
-      "column_name": "extracted_at",
+      "check_id": "week2-digital-courtroom.overall_verdict.format",
+      "column_name": "overall_verdict",
+      "check_type": "format",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No format check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_verdict.pattern",
+      "column_name": "overall_verdict",
+      "check_type": "pattern",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No pattern check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_verdict.enum",
+      "column_name": "overall_verdict",
+      "check_type": "enum",
+      "status": "PASS",
+      "actual_value": "all in allowed set",
+      "expected": "allowed=['PASS', 'FAIL', 'WARN']",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": ""
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_verdict.range",
+      "column_name": "overall_verdict",
+      "check_type": "range",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No range check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_score.required",
+      "column_name": "overall_score",
+      "check_type": "required",
+      "status": "PASS",
+      "actual_value": "null_count=0",
+      "expected": "null_count=0",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": ""
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_score.unique",
+      "column_name": "overall_score",
+      "check_type": "unique",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "Uniqueness not required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_score.format",
+      "column_name": "overall_score",
+      "check_type": "format",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No format check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_score.pattern",
+      "column_name": "overall_score",
+      "check_type": "pattern",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No pattern check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_score.enum",
+      "column_name": "overall_score",
+      "check_type": "enum",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No enum check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.overall_score.range",
+      "column_name": "overall_score",
+      "check_type": "range",
+      "status": "PASS",
+      "actual_value": "min=1.5000, max=4.5000",
+      "expected": "min>=1.5, max<=4.5",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": ""
+    },
+    {
+      "check_id": "week2-digital-courtroom.confidence.required",
+      "column_name": "confidence",
+      "check_type": "required",
+      "status": "PASS",
+      "actual_value": "null_count=0",
+      "expected": "null_count=0",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": ""
+    },
+    {
+      "check_id": "week2-digital-courtroom.confidence.unique",
+      "column_name": "confidence",
+      "check_type": "unique",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "Uniqueness not required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.confidence.format",
+      "column_name": "confidence",
+      "check_type": "format",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No format check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.confidence.pattern",
+      "column_name": "confidence",
+      "check_type": "pattern",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No pattern check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.confidence.enum",
+      "column_name": "confidence",
+      "check_type": "enum",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "No enum check required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.confidence.range",
+      "column_name": "confidence",
+      "check_type": "range",
+      "status": "PASS",
+      "actual_value": "min=0.7100, max=0.9800",
+      "expected": "min>=0.0, max<=1.0",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": ""
+    },
+    {
+      "check_id": "week2-digital-courtroom.evaluated_at.required",
+      "column_name": "evaluated_at",
+      "check_type": "required",
+      "status": "PASS",
+      "actual_value": "null_count=0",
+      "expected": "null_count=0",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": ""
+    },
+    {
+      "check_id": "week2-digital-courtroom.evaluated_at.unique",
+      "column_name": "evaluated_at",
+      "check_type": "unique",
+      "status": "PASS",
+      "actual_value": "N/A",
+      "expected": "N/A",
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": "Uniqueness not required."
+    },
+    {
+      "check_id": "week2-digital-courtroom.evaluated_at.format",
+      "column_name": "evaluated_at",
       "check_type": "format",
       "status": "PASS",
       "actual_value": "all match format=date-time",
@@ -465,8 +563,8 @@
       "message": ""
     },
     {
-      "check_id": "week3-document-refinery-extractions.extracted_at.pattern",
-      "column_name": "extracted_at",
+      "check_id": "week2-digital-courtroom.evaluated_at.pattern",
+      "column_name": "evaluated_at",
       "check_type": "pattern",
       "status": "PASS",
       "actual_value": "N/A",
@@ -477,8 +575,8 @@
       "message": "No pattern check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.extracted_at.enum",
-      "column_name": "extracted_at",
+      "check_id": "week2-digital-courtroom.evaluated_at.enum",
+      "column_name": "evaluated_at",
       "check_type": "enum",
       "status": "PASS",
       "actual_value": "N/A",
@@ -489,8 +587,8 @@
       "message": "No enum check required."
     },
     {
-      "check_id": "week3-document-refinery-extractions.extracted_at.range",
-      "column_name": "extracted_at",
+      "check_id": "week2-digital-courtroom.evaluated_at.range",
+      "column_name": "evaluated_at",
       "check_type": "range",
       "status": "PASS",
       "actual_value": "N/A",
@@ -499,18 +597,6 @@
       "records_failing": 0,
       "sample_failing": [],
       "message": "No range check required."
-    },
-    {
-      "check_id": "week3-document-refinery-extractions.extracted_facts.entity_refs.referential_integrity",
-      "column_name": "extracted_facts[*].entity_refs",
-      "check_type": "referential_integrity",
-      "status": "PASS",
-      "actual_value": "all refs valid",
-      "expected": "all entity_refs in entities[]",
-      "severity": "LOW",
-      "records_failing": 0,
-      "sample_failing": [],
-      "message": ""
     }
   ]
 }

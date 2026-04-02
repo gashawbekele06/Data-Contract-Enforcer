@@ -1,12 +1,12 @@
 {
-  "report_id": "d2475cc4-c31a-419d-a8ae-c1f510e8bd11",
+  "report_id": "08ea806d-5276-40ab-ae54-bf2924327587",
   "contract_id": "week3-document-refinery-extractions",
-  "snapshot_id": "b2285f46834ec51a78cb0e56d14a3b32c72aeae5cbb3777dd25b14a86bad5848",
-  "run_timestamp": "2026-03-31T22:47:52Z",
+  "snapshot_id": "ffdb5d24c852833339cfe3e76dffc2da2f07b91243843d0149663c8680562110",
+  "run_timestamp": "2026-04-02T18:48:13Z",
   "injected_violation": false,
   "total_checks": 41,
-  "passed": 40,
-  "failed": 1,
+  "passed": 41,
+  "failed": 0,
   "warned": 0,
   "errored": 0,
   "results": [
@@ -398,17 +398,13 @@
       "check_id": "week3-document-refinery-extractions.processing_time_ms.range",
       "column_name": "processing_time_ms",
       "check_type": "range",
-      "status": "FAIL",
-      "actual_value": "min=0.0000, max=1364530.0000, mean=95611.6400",
+      "status": "PASS",
+      "actual_value": "min=471.0000, max=1364530.0000",
       "expected": "min>=1, max<=None",
-      "severity": "HIGH",
-      "records_failing": 5,
-      "sample_failing": [
-        "11",
-        "12",
-        "13"
-      ],
-      "message": "processing_time_ms range violation: actual [0.0000, 1364530.0000] vs expected [1, None]. "
+      "severity": "LOW",
+      "records_failing": 0,
+      "sample_failing": [],
+      "message": ""
     },
     {
       "check_id": "week3-document-refinery-extractions.token_count.required",
