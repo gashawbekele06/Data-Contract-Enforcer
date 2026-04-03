@@ -1,16 +1,16 @@
 {
-  "report_id": "8f589b21-9169-4da1-b98d-fa864266c701",
-  "generated_at": "2026-04-03T14:09:58Z",
+  "report_id": "02c40d75-457a-494c-a7bd-ac02de048253",
+  "generated_at": "2026-04-03T17:25:53Z",
   "report_date": "2026-04-03",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
   "data_health_score": 90,
   "health_narrative": "90/100 \u2014 Healthy: all validation checks passing, but 2 high-severity violation(s) require attention.",
   "validation_summary": {
-    "total_checks": 307,
-    "passed": 307,
+    "total_checks": 389,
+    "passed": 388,
     "failed": 0,
-    "warned": 0,
-    "reports_analyzed": 46
+    "warned": 1,
+    "reports_analyzed": 48
   },
   "violations_this_week": {
     "total": 2,
@@ -71,17 +71,11 @@
     {
       "priority": 1,
       "severity": "HIGH",
-      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9797 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
+      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9797 (threshold=0.15). Locate change in contracts/ai_extensions.py and revert or update contract clause 'ai_extensions.embedding_drift'.",
       "affected_pipelines": []
     },
     {
       "priority": 2,
-      "severity": "HIGH",
-      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9797 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
-      "affected_pipelines": []
-    },
-    {
-      "priority": 3,
       "severity": "HIGH",
       "action": "Investigate embedding drift in extracted_facts[*].text. Re-run contracts/ai_extensions.py --set-baseline after confirming the distribution shift is intentional.",
       "affected_pipelines": [

@@ -203,6 +203,14 @@ def schema_changes_summary(evo_reports: list[dict]) -> list[dict]:
 # Recommended actions
 # ---------------------------------------------------------------------------
 
+# Map known check_id prefixes to their authoritative source file
+CHECK_FILE_MAP = {
+    "ai_extensions.embedding_drift": "contracts/ai_extensions.py",
+    "ai_extensions.llm_output_schema": "contracts/ai_extensions.py",
+    "ai_extensions.prompt_input": "contracts/ai_extensions.py",
+}
+
+
 def generate_recommended_actions(
     violations: list[dict],
     health_score: int,
@@ -214,7 +222,16 @@ def generate_recommended_actions(
     current_drift_score = (ai_metrics.get("embedding_drift") or {}).get("drift_score")
     current_drift_threshold = (ai_metrics.get("embedding_drift") or {}).get("threshold", 0.15)
 
+    # Deduplicate violations by check_id — keep the most severe occurrence only
+    seen_checks: set[str] = set()
+    deduped = []
     for v in sorted(violations, key=lambda x: severity_order.get(x.get("severity", "LOW"), 4)):
+        check = v.get("check_id", "")
+        if check not in seen_checks:
+            seen_checks.add(check)
+            deduped.append(v)
+
+    for v in deduped:
         if len(actions) >= 3:
             break
         col = v.get("column_name", "unknown")
@@ -223,7 +240,12 @@ def generate_recommended_actions(
         blast = v.get("blast_radius", {})
         pipelines = blast.get("affected_pipelines", [])
         blame = v.get("blame_chain", [{}])
-        file_path = blame[0].get("file_path", "unknown") if blame else "unknown"
+        # Prefer blame chain file path, then check-to-file map, then "unknown"
+        file_path = (
+            (blame[0].get("file_path") if blame else None)
+            or CHECK_FILE_MAP.get(check)
+            or "unknown"
+        )
 
         # For embedding drift violations, use the current score from ai_metrics
         # instead of the stale value embedded in the violation log message.
