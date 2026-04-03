@@ -2,7 +2,7 @@ version: 2
 models:
 - name: extractions
   description: Auto-generated contract for extractions. One record per unit of output.
-    Generated 2026-04-02T19:31:55Z.
+    Generated 2026-04-03T13:35:21Z.
   columns:
   - name: doc_id
     tests:
