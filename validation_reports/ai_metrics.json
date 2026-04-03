@@ -1,11 +1,11 @@
 {
-  "run_timestamp": "2026-04-02T19:32:30Z",
+  "run_timestamp": "2026-04-03T13:44:00Z",
   "embedding_drift": {
     "status": "FAIL",
-    "drift_score": 1.016969,
+    "drift_score": 0.979748,
     "threshold": 0.15,
     "n_sample": 200,
-    "message": "Embedding drift FAIL: 1.0170 (threshold=0.15)"
+    "message": "Embedding drift FAIL: 0.9797 (threshold=0.15)"
   },
   "prompt_input_validation": {
     "status": "PASS",
@@ -18,7 +18,7 @@
     "message": "Prompt input validation: 0/60 records invalid (rate=0.0000)"
   },
   "llm_output_schema": {
-    "run_date": "2026-04-02T19:32:30Z",
+    "run_date": "2026-04-03T13:44:00Z",
     "contract_id": "week2-digital-courtroom",
     "total_outputs": 50,
     "schema_violations": 0,

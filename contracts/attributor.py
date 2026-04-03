@@ -557,11 +557,26 @@ def append_violation(violation: dict) -> None:
 # CLI
 # ---------------------------------------------------------------------------
 
+def _latest_validation_report() -> str | None:
+    """Return the path of the most recently modified validation report JSON, or None."""
+    candidates = [
+        p for p in (ROOT / "validation_reports").glob("*.json")
+        if p.name != "ai_metrics.json" and not p.name.startswith("schema_evolution")
+    ]
+    if not candidates:
+        return None
+    return str(max(candidates, key=lambda p: p.stat().st_mtime))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="ViolationAttributor — trace validation failures to originating commits"
     )
-    parser.add_argument("--report", required=True, help="Path to validation report JSON")
+    parser.add_argument(
+        "--report",
+        default=None,
+        help="Path to validation report JSON (default: latest report in validation_reports/)",
+    )
     parser.add_argument(
         "--lineage",
         default=str(DEFAULT_LINEAGE),
@@ -579,7 +594,15 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with open(args.report, encoding="utf-8") as f:
+    report_path = args.report or _latest_validation_report()
+    if not report_path:
+        print("Error: no validation reports found in validation_reports/. "
+              "Run main.py --phase validate first.", file=sys.stderr)
+        sys.exit(1)
+    if args.report is None:
+        print(f"[ViolationAttributor] No --report given, using latest: {report_path}")
+
+    with open(report_path, encoding="utf-8") as f:
         report = json.load(f)
 
     contract_id = report.get("contract_id", "unknown")

@@ -1,21 +1,21 @@
 {
-  "report_id": "41c3a46c-1412-426e-a8cd-2bc6190aab54",
-  "generated_at": "2026-04-03T12:56:39Z",
+  "report_id": "8f589b21-9169-4da1-b98d-fa864266c701",
+  "generated_at": "2026-04-03T14:09:58Z",
   "report_date": "2026-04-03",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
-  "data_health_score": 95,
-  "health_narrative": "95/100 \u2014 Healthy: all validation checks passing, but 1 high-severity violation(s) require attention.",
+  "data_health_score": 90,
+  "health_narrative": "90/100 \u2014 Healthy: all validation checks passing, but 2 high-severity violation(s) require attention.",
   "validation_summary": {
-    "total_checks": 266,
-    "passed": 266,
+    "total_checks": 307,
+    "passed": 307,
     "failed": 0,
     "warned": 0,
-    "reports_analyzed": 44
+    "reports_analyzed": 46
   },
   "violations_this_week": {
-    "total": 1,
+    "total": 2,
     "by_severity": {
-      "HIGH": 1
+      "HIGH": 2
     },
     "top_violations": [
       {
@@ -25,6 +25,15 @@
         "system": "week3-document-refinery-extractions",
         "field": "extracted_facts[*].text",
         "message": "Embedding drift FAIL: 0.9534 (threshold=0.15)",
+        "downstream_impact": "No downstream consumers identified in lineage graph."
+      },
+      {
+        "violation_id": "0720e5f7-e2e9-457c-bb85-2034af8cbbc0",
+        "check_id": "ai_extensions.embedding_drift",
+        "severity": "HIGH",
+        "system": "week3-document-refinery-extractions",
+        "field": "extracted_facts[*].text",
+        "message": "Embedding drift FAIL: 0.9797 (threshold=0.15)",
         "downstream_impact": "No downstream consumers identified in lineage graph."
       }
     ]
@@ -50,7 +59,7 @@
   "ai_risk_assessment": {
     "overall_ai_status": "AMBER",
     "embedding_drift_status": "FAIL",
-    "embedding_drift_score": 1.016969,
+    "embedding_drift_score": 0.979748,
     "embedding_threshold": 0.15,
     "prompt_input_violation_rate": 0.0,
     "llm_output_violation_rate": 0.0,
@@ -62,11 +71,17 @@
     {
       "priority": 1,
       "severity": "HIGH",
-      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 1.0170 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
+      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9797 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
       "affected_pipelines": []
     },
     {
       "priority": 2,
+      "severity": "HIGH",
+      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9797 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
+      "affected_pipelines": []
+    },
+    {
+      "priority": 3,
       "severity": "HIGH",
       "action": "Investigate embedding drift in extracted_facts[*].text. Re-run contracts/ai_extensions.py --set-baseline after confirming the distribution shift is intentional.",
       "affected_pipelines": [
