@@ -400,7 +400,46 @@ risk_level            : HIGH
 | `field_removed` | Required field deleted — all consumers reading it break immediately | No |
 | `field_added_required` | New required field added — producers not writing it fail required check | No |
 
-### 5.5 Migration Impact
+### 5.5 Production Tool Comparison
+
+The same `range_tightened` change was evaluated against two industry-standard schema evolution tools to show what they catch, what they miss, and where this enforcer fills the gap.
+
+#### Confluent Schema Registry
+
+Confluent Schema Registry is the most widely deployed schema evolution system in production data pipelines. It enforces compatibility between schema versions using four modes: `BACKWARD`, `FORWARD`, `FULL`, and `NONE`.
+
+For the `processing_time_ms` change (`minimum=1, maximum=None → minimum=1000, maximum=60000`):
+
+| Criterion | Confluent Schema Registry | This Enforcer |
+|-----------|--------------------------|---------------|
+| Check method | Structural diff of Avro/JSON Schema field definitions | Statistical snapshot diff of Bitol YAML constraint clauses |
+| Field type changed? | No (`integer` → `integer`) → **COMPATIBLE** | Noted: type unchanged |
+| Field removed? | No → **COMPATIBLE** | Noted: field still present |
+| Numeric range constraint changed? | **Not checked — Avro schemas do not encode `minimum`/`maximum`** | **CAUGHT: `range_tightened` → BACKWARD_INCOMPATIBLE** |
+| Compatibility verdict | **`is_compatible: true`** (false negative) | **BACKWARD_INCOMPATIBLE** (correct) |
+| Migration impact report | Not generated | Generated — 4 concrete steps |
+| Per-consumer failure modes | Not generated | Generated — maps break to each subscriber |
+| Blast radius | Not generated | Generated — registry + lineage BFS |
+
+**The critical gap:** Confluent Schema Registry operates on structural schema definitions. Avro and JSON Schema encode types and field presence — not value-range semantics. A constraint tightening that leaves the field type and name unchanged is **invisible to Confluent**. It would approve this breaking change and allow it to reach production.
+
+This enforcer uses the same Confluent compatibility taxonomy (`range_tightened`, `type_narrowing`, etc.) to *name* the violation but applies it to Bitol constraint clauses — catching the class of statistical range violations that Confluent structurally cannot.
+
+#### dbt Schema Tests
+
+dbt generates `accepted_range` tests (via `dbt-utils`) and compiles them into `schema.yml` test suites. This enforcer already generates companion dbt schema files (`generated_contracts/week3_extractions_dbt.yml`).
+
+| Criterion | dbt accepted_range test | This Enforcer |
+|-----------|------------------------|---------------|
+| Constraint enforcement | Runtime test against live data | Runtime validation + snapshot diff |
+| Snapshot diffing (before/after) | **No** — dbt tests check current data against a fixed threshold, no historical comparison | **Yes** — diffs `20260331_224716.yaml` against `20260331_225113_breaking.yaml` |
+| Breaking change classification | **No taxonomy verdict** — test either passes or fails | Classified: `range_tightened → BACKWARD_INCOMPATIBLE` |
+| Migration impact report | **Not generated** | Generated |
+| Downstream blast radius | **Not generated** — dbt knows models, not inter-team subscriptions | Generated from `contract_registry/subscriptions.yaml` |
+
+**Summary:** dbt tests verify that current data satisfies the current constraint. They cannot detect that the constraint itself has changed in a breaking direction, nor can they identify which downstream teams will be affected. This enforcer adds the snapshot-diffing and registry-aware blast radius layer that neither Confluent nor dbt provides.
+
+### 5.6 Migration Impact
 
 Downstream teams must complete all of the following **before the change ships**:
 
@@ -409,7 +448,7 @@ Downstream teams must complete all of the following **before the change ships**:
 3. **Re-validate all dependent contracts:** Run `contracts/runner.py` across all consumers of `week3-document-refinery-extractions` after the producer change to confirm no downstream check now fails.
 4. **Notify affected teams:** The registry shows no direct subscribers for `processing_time_ms`, but all Week 3 consumers receive this field in the payload. Tag the release with `BREAKING_CHANGE` and send migration notice to `week4-team` and `week7-team`.
 
-### 5.6 Per-Consumer Failure Mode Analysis
+### 5.7 Per-Consumer Failure Mode Analysis
 
 **Breaking change: `range_tightened` on `processing_time_ms`**
 
@@ -424,7 +463,7 @@ Downstream teams must complete all of the following **before the change ships**:
 | `week4-brownfield-cartographer` | ENFORCE | Reads `confidence` as `number` — type narrowing to integer causes precision loss and scale corruption; threshold checks receive 100× inflated values. Registry note: Scale change corrupts threshold checks. | Update read logic to handle new type. Re-run validation in ENFORCE mode. Notify `week4-team@org.com`. |
 | `week7-ai-contract-extension` | AUDIT | Reads `confidence` as `number` — scale change invalidates all embedding drift baselines calibrated on 0.0–1.0 values. | Audit AI extension baseline for `confidence`. Re-run `contracts/ai_extensions.py --set-baseline`. Notify `week7-team@org.com`. |
 
-### 5.7 Rollback Plan
+### 5.8 Rollback Plan
 
 ```
 Rollback Procedure for range_tightened on processing_time_ms:
@@ -459,7 +498,7 @@ Rollback Procedure for range_tightened on processing_time_ms:
      baselines have been re-established.
 ```
 
-### 5.8 Resolution
+### 5.9 Resolution
 
 A subsequent snapshot (`20260402_184117.yaml`) shows `range_widened` — the range was restored to `min=1, max=None`. This demonstrates the SchemaEvolutionAnalyzer's ability to detect both the breaking introduction and the safe rollback, with full per-consumer impact analysis at each step.
 
