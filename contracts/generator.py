@@ -51,6 +51,7 @@ import yaml
 # ---------------------------------------------------------------------------
 
 ROOT = Path(__file__).parent.parent
+GENERATOR_BASELINES = ROOT / "schema_snapshots" / "generator_baselines.json"
 
 # Map stem → canonical contract id
 CONTRACT_ID_MAP = {
@@ -298,6 +299,97 @@ def profile_column(col_name: str, series: pd.Series) -> dict:
 def profile_dataframe(df: pd.DataFrame) -> dict[str, dict]:
     """Profile every column in the DataFrame."""
     return {col: profile_column(col, df[col]) for col in df.columns}
+
+
+def write_generator_baselines(contract_id: str, profiles: dict[str, dict]) -> None:
+    """
+    Persist mean and stddev for every numeric column to generator_baselines.json.
+    This file is the authoritative source for ValidationRunner drift checks —
+    kept separate from schema snapshots (which store full contract YAML).
+    Also flags suspicious distributions so clause annotations can surface them.
+    """
+    baselines: dict = {}
+    if GENERATOR_BASELINES.exists():
+        with open(GENERATOR_BASELINES, encoding="utf-8") as f:
+            try:
+                baselines = json.load(f)
+            except json.JSONDecodeError:
+                baselines = {}
+
+    for col, p in profiles.items():
+        if p.get("dtype") not in ("float", "integer"):
+            continue
+        mean = p.get("mean")
+        stddev = p.get("stddev")
+        if mean is None:
+            continue
+        key = f"{contract_id}.{col}"
+        baselines[key] = {
+            "mean": mean,
+            "stddev": stddev or 0.0,
+            "min": p.get("min"),
+            "max": p.get("max"),
+            "n": p.get("non_null", 0),
+            "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
+    GENERATOR_BASELINES.parent.mkdir(parents=True, exist_ok=True)
+    with open(GENERATOR_BASELINES, "w", encoding="utf-8") as f:
+        json.dump(baselines, f, indent=2)
+
+
+def flag_suspicious_distributions(
+    contract_id: str, profiles: dict[str, dict]
+) -> dict[str, str]:
+    """
+    Inspect numeric column distributions and return a dict of
+    col_name → warning string for any column with a suspicious distribution.
+
+    Checks:
+    - mean near 0 (< 0.01) or near 1 (> 0.99) on 0–1 scale columns
+      → may be degenerate / clamped
+    - stddev == 0 → constant column, likely a bug
+    - max > 1.0 on a column named 'confidence' → wrong scale (0–100)
+    - mean > p75 by a large margin → heavily right-skewed
+    """
+    warnings: dict[str, str] = {}
+    for col, p in profiles.items():
+        if p.get("dtype") not in ("float", "integer"):
+            continue
+        mean = p.get("mean")
+        stddev = p.get("stddev", 0)
+        mn = p.get("min")
+        mx = p.get("max")
+        if mean is None:
+            continue
+
+        if stddev == 0:
+            warnings[col] = (
+                f"stddev=0 — all values are identical ({mean}). "
+                "Possible pipeline bug or placeholder data."
+            )
+        elif "confidence" in col.lower():
+            if mx is not None and mx > 1.0:
+                warnings[col] = (
+                    f"max={mx:.2f} exceeds 1.0 — confidence appears to be on 0–100 scale. "
+                    "Contract enforces 0.0–1.0. This is a BREAKING violation."
+                )
+            elif mean > 0.99:
+                warnings[col] = (
+                    f"mean={mean:.4f} > 0.99 — confidence values appear clamped at ceiling."
+                )
+            elif mean < 0.01:
+                warnings[col] = (
+                    f"mean={mean:.4f} < 0.01 — confidence values appear near zero. "
+                    "Check for broken normalisation."
+                )
+        p75 = p.get("p75")
+        if p75 is not None and p75 > 0 and mean > p75 * 3:
+            warnings[col] = warnings.get(col, "") + (
+                f" mean={mean:.2f} >> p75={p75:.2f} — heavily right-skewed distribution."
+            )
+
+    return warnings
 
 
 # ---------------------------------------------------------------------------
@@ -791,6 +883,24 @@ class ContractGenerator:
                     ann = llm_annotate_column(col, self.stem, dtype, sample, all_cols)
                     if ann:
                         annotations[col] = ann
+
+        # Write numeric baselines (mean/stddev) to dedicated baselines file
+        # (separate from schema_snapshots/ YAML — designed for ValidationRunner drift checks)
+        write_generator_baselines(self.contract_id, profiles)
+        try:
+            print(f"  Baselines → {GENERATOR_BASELINES.relative_to(ROOT)}")
+        except ValueError:
+            print(f"  Baselines → {GENERATOR_BASELINES}")
+
+        # Flag suspicious distributions and inject as clause annotations
+        dist_warnings = flag_suspicious_distributions(self.contract_id, profiles)
+        if dist_warnings:
+            print(f"  Distribution warnings ({len(dist_warnings)}):")
+            for col, warn in dist_warnings.items():
+                print(f"    [{col}] {warn}")
+            # Merge into annotations so build_contract embeds them in the clause
+            for col, warn in dist_warnings.items():
+                annotations.setdefault(col, {})["distribution_warning"] = warn
 
         contract = self.build_contract(df, profiles, lineage, annotations)
 

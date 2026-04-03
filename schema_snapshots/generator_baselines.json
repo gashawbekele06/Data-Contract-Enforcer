@@ -1,0 +1,10 @@
+{
+  "week3-document-refinery-extractions.processing_time_ms": {
+    "mean": 80939.55,
+    "stddev": 191603.81806273537,
+    "min": 471.0,
+    "max": 1364530.0,
+    "n": 60,
+    "recorded_at": "2026-04-03T17:36:56Z"
+  }
+}

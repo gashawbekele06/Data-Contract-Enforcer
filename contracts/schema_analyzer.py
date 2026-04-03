@@ -34,6 +34,7 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).parent.parent
+DEFAULT_REGISTRY = ROOT / "contract_registry" / "subscriptions.yaml"
 
 
 def now_iso() -> str:
@@ -244,6 +245,209 @@ def diff_schemas(old_schema: dict, new_schema: dict) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Per-consumer failure mode analysis
+# ---------------------------------------------------------------------------
+
+def load_registry(registry_path: Path | None = None) -> list[dict]:
+    """Load subscriptions from the contract registry YAML."""
+    path = registry_path or DEFAULT_REGISTRY
+    if not Path(path).exists():
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            doc = yaml.safe_load(f) or {}
+        return doc.get("subscriptions", [])
+    except Exception:
+        return []
+
+
+def consumer_failure_modes(
+    contract_id: str,
+    changes: list[dict],
+    subscriptions: list[dict],
+) -> list[dict]:
+    """
+    Join breaking schema changes with registry subscribers to produce
+    per-consumer failure mode analysis.
+
+    For each breaking change, finds every subscriber whose breaking_fields
+    or fields_consumed intersect with the changed column, then describes
+    the specific failure mode and a consumer-specific action.
+    """
+    breaking = [c for c in changes if not c.get("backward_compatible")]
+    if not breaking:
+        return []
+
+    # Build a lookup: field_name → list of subscribers that depend on it
+    relevant_subs = [s for s in subscriptions if s.get("contract_id") == contract_id]
+
+    failure_modes: list[dict] = []
+
+    for change in breaking:
+        col = change["column"]
+        ct = change["change_type"]
+        affected_consumers = []
+
+        for sub in relevant_subs:
+            subscriber_id = sub.get("subscriber_id", "")
+            # Check if this column appears in breaking_fields or fields_consumed
+            breaking_fields = sub.get("breaking_fields", [])
+            fields_consumed = sub.get("fields_consumed", [])
+
+            def _field_matches(registry_field: str, changed_col: str) -> bool:
+                """
+                Match a registry field path against a changed schema column.
+                Handles cases like registry='extracted_facts[].confidence'
+                matching changed_col='confidence' (nested field) or
+                'extracted_facts' (parent array).
+                """
+                reg_root = registry_field.split("[")[0].split(".")[0]
+                col_root = changed_col.split("[")[0].split(".")[0]
+                return (
+                    reg_root == col_root
+                    or col_root in registry_field
+                    or reg_root in changed_col
+                )
+
+            in_breaking = any(
+                _field_matches(
+                    bf.get("field", bf) if isinstance(bf, dict) else bf,
+                    col,
+                )
+                for bf in breaking_fields
+            )
+            in_consumed = any(
+                _field_matches(f, col)
+                for f in fields_consumed
+            )
+
+            if not (in_breaking or in_consumed):
+                continue
+
+            # Build consumer-specific failure description
+            reason = next(
+                (
+                    (bf.get("reason", "") if isinstance(bf, dict) else "")
+                    for bf in breaking_fields
+                    if _field_matches(
+                        bf.get("field", bf) if isinstance(bf, dict) else bf, col
+                    )
+                ),
+                "",
+            )
+
+            failure_description = _describe_failure_mode(ct, col, change, reason)
+            consumer_action = _consumer_action(ct, col, subscriber_id, sub)
+
+            affected_consumers.append({
+                "subscriber_id": subscriber_id,
+                "subscriber_team": sub.get("subscriber_team", ""),
+                "contact": sub.get("contact", ""),
+                "validation_mode": sub.get("validation_mode", "AUDIT"),
+                "dependency_type": "breaking_field" if in_breaking else "consumed_field",
+                "failure_mode": failure_description,
+                "consumer_action": consumer_action,
+            })
+
+        if affected_consumers:
+            failure_modes.append({
+                "change_type": ct,
+                "column": col,
+                "risk_level": change.get("risk_level", "HIGH"),
+                "affected_consumers": affected_consumers,
+            })
+
+    return failure_modes
+
+
+def _describe_failure_mode(
+    change_type: str, col: str, change: dict, registry_reason: str
+) -> str:
+    """Produce a specific failure description for a consumer given a change type."""
+    old_val = change.get("old_value", "?")
+    new_val = change.get("new_value", "?")
+
+    descriptions = {
+        "type_narrowing": (
+            f"Reads '{col}' as {old_val} — after narrowing to {new_val}, "
+            "existing read logic will encounter type mismatch or precision loss."
+        ),
+        "remove_column": (
+            f"Depends on '{col}' which has been removed. "
+            "Any read or join on this field will produce NULL or KeyError."
+        ),
+        "rename_column": (
+            f"References '{col}' by name — rename causes immediate KeyError / NULL "
+            "in all downstream queries and pipelines."
+        ),
+        "range_tightened": (
+            f"May produce values for '{col}' in old range {old_val}. "
+            f"Tightened constraint {new_val} will cause validation FAILs on existing data."
+        ),
+        "add_required_column": (
+            f"Does not currently populate '{col}'. "
+            "New required constraint means any record missing this field will be rejected."
+        ),
+        "remove_enum_value": (
+            f"May produce values for '{col}' that are in the removed enum set. "
+            "Removed values will fail enum validation downstream."
+        ),
+        "pattern_changed": (
+            f"Produces '{col}' values matching old pattern. "
+            "New pattern constraint will fail on existing producer output."
+        ),
+    }
+    desc = descriptions.get(change_type, f"Field '{col}' changed ({change_type}).")
+    if registry_reason:
+        desc += f" Registry note: {registry_reason.strip()}"
+    return desc
+
+
+def _consumer_action(
+    change_type: str, col: str, subscriber_id: str, sub: dict
+) -> str:
+    """Produce a consumer-specific remediation action."""
+    mode = sub.get("validation_mode", "AUDIT")
+    contact = sub.get("contact", "team")
+    team = sub.get("subscriber_team", subscriber_id)
+
+    base_actions = {
+        "type_narrowing": (
+            f"Update {subscriber_id} read logic to handle new type for '{col}'. "
+            f"Re-run validation in {mode} mode. Notify {contact}."
+        ),
+        "remove_column": (
+            f"Remove all references to '{col}' in {subscriber_id} before deploying. "
+            f"Coordinate with {team} team ({contact}) for migration window."
+        ),
+        "rename_column": (
+            f"Update {subscriber_id} to use new column name. "
+            f"Deploy alias column first; remove old name after {team} migrates."
+        ),
+        "range_tightened": (
+            f"Audit {subscriber_id} producers for '{col}' values outside new range. "
+            f"Run ValidationRunner --mode WARN against {subscriber_id} data before enforcing."
+        ),
+        "add_required_column": (
+            f"Update {subscriber_id} to populate '{col}' in all output records. "
+            f"Backfill historical records or provide a default value."
+        ),
+        "remove_enum_value": (
+            f"Scan {subscriber_id} output for removed enum values in '{col}'. "
+            f"Replace or remap before enforcing the updated contract."
+        ),
+        "pattern_changed": (
+            f"Validate {subscriber_id} output for '{col}' against new pattern. "
+            f"Update producers if format has changed."
+        ),
+    }
+    return base_actions.get(
+        change_type,
+        f"Review impact on {subscriber_id} for field '{col}' change. Contact {contact}.",
+    )
+
+
+# ---------------------------------------------------------------------------
 # Migration impact report builder
 # ---------------------------------------------------------------------------
 
@@ -254,6 +458,7 @@ def build_migration_report(
     changes: list[dict],
     schema_a: dict,
     schema_b: dict,
+    subscriptions: list[dict] | None = None,
 ) -> dict:
     breaking = [c for c in changes if not c.get("backward_compatible")]
     compatible = [c for c in changes if c.get("backward_compatible")]
@@ -314,6 +519,11 @@ def build_migration_report(
                 f"{c.get('added_values')}."
             )
 
+    # Per-consumer failure mode analysis — join diffs with registry subscribers
+    consumer_modes = consumer_failure_modes(
+        contract_id, changes, subscriptions or []
+    )
+
     return {
         "analysis_id": str(uuid.uuid4()),
         "contract_id": contract_id,
@@ -326,6 +536,7 @@ def build_migration_report(
         "compatible_changes": len(compatible),
         "changes": changes,
         "human_summary": human_summary,
+        "consumer_failure_modes": consumer_modes,
         "migration_checklist": checklist,
         "rollback_plan": rollback_plan,
         "blast_radius_note": (
@@ -431,6 +642,12 @@ def main() -> None:
 
     changes = diff_schemas(schema_a, schema_b)
 
+    subscriptions = load_registry()
+    if subscriptions:
+        relevant = [s for s in subscriptions if s.get("contract_id") == contract_id]
+        print(f"  Registry : {len(subscriptions)} subscriptions loaded, "
+              f"{len(relevant)} for '{contract_id}'")
+
     report = build_migration_report(
         contract_id,
         str(snap_a),
@@ -438,6 +655,7 @@ def main() -> None:
         changes,
         schema_a,
         schema_b,
+        subscriptions=subscriptions,
     )
 
     if args.output:
@@ -453,8 +671,17 @@ def main() -> None:
     print(f"\n  Verdict  : {report['compatibility_verdict']}")
     print(f"  Changes  : {report['total_changes']} total, {report['breaking_changes']} breaking")
     for c in changes:
-        compat = "✓" if c.get("backward_compatible") else "✗ BREAKING"
+        compat = "OK" if c.get("backward_compatible") else "BREAKING"
         print(f"  [{compat}] {c['change_type']} on '{c['column']}'")
+    consumer_modes = report.get("consumer_failure_modes", [])
+    if consumer_modes:
+        print(f"\n  Consumer Failure Modes ({len(consumer_modes)} breaking change(s) affect subscribers):")
+        for fm in consumer_modes:
+            print(f"    [{fm['risk_level']}] {fm['change_type']} on '{fm['column']}':")
+            for consumer in fm["affected_consumers"]:
+                print(f"      - {consumer['subscriber_id']} ({consumer['validation_mode']})")
+                print(f"        Failure: {consumer['failure_mode'][:120]}")
+                print(f"        Action : {consumer['consumer_action'][:120]}")
     print(f"\n  Report   → {out.relative_to(ROOT)}")
 
 
