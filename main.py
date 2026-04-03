@@ -123,7 +123,7 @@ def phase_generate(annotate: bool = False) -> None:
 # Phase 2A — ValidationRunner
 # ---------------------------------------------------------------------------
 
-def phase_validate(inject_violation: bool = False) -> list[str]:
+def phase_validate(inject_violation: bool = False, mode: str = "ENFORCE") -> list[str]:
     """Returns list of validation report paths that contain FAILs."""
     header("Phase 2A — ValidationRunner")
     from contracts.runner import ValidationRunner
@@ -151,6 +151,7 @@ def phase_validate(inject_violation: bool = False) -> list[str]:
             contract_path=str(contract_file),
             data_path=str(source),
             inject_violation=inject,
+            mode=mode,
         )
         report = runner.run(output_path=str(out_path))
 
@@ -354,7 +355,7 @@ def main() -> None:
         phase_generate(annotate=args.annotate)
 
     if phase in ("validate", "all"):
-        failed_reports = phase_validate(inject_violation=args.inject_violation)
+        failed_reports = phase_validate(inject_violation=args.inject_violation, mode=args.mode)
     else:
         # Collect existing reports with failures for attribution
         failed_reports = []

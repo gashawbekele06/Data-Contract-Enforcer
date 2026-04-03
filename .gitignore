@@ -61,3 +61,11 @@ schema_snapshots/*.npz.tmp
 # Distribution / packaging
 MANIFEST
 pip-wheel-metadata/
+
+# Next.js dashboard
+dashboard/node_modules/
+dashboard/.next/
+dashboard/.turbo/
+dashboard/out/
+dashboard/.env.local
+dashboard/.env.production

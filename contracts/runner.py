@@ -549,16 +549,23 @@ def inject_confidence_violation(records: list[dict]) -> list[dict]:
 # Main ValidationRunner
 # ---------------------------------------------------------------------------
 
+VALID_MODES = ("AUDIT", "WARN", "ENFORCE")
+
+
 class ValidationRunner:
     def __init__(
         self,
         contract_path: str,
         data_path: str,
         inject_violation: bool = False,
+        mode: str = "ENFORCE",
     ):
         self.contract_path = Path(contract_path)
         self.data_path = Path(data_path)
         self.inject_violation = inject_violation
+        if mode not in VALID_MODES:
+            raise ValueError(f"--mode must be one of {VALID_MODES}, got '{mode}'")
+        self.mode = mode
 
     def load_contract(self) -> dict:
         with open(self.contract_path, encoding="utf-8") as f:
@@ -591,12 +598,44 @@ class ValidationRunner:
         with open(BASELINES_PATH, "w", encoding="utf-8") as f:
             json.dump(baselines, f, indent=2)
 
+    def _apply_mode(self, all_results: list[dict]) -> list[dict]:
+        """
+        Apply enforcement mode to the raw check results.
+
+        AUDIT   — observations only: all FAILs are downgraded to INFO status.
+                  Nothing is surfaced as an actual failure; the report is
+                  purely informational and will not trigger downstream alerts.
+
+        WARN    — FAILs become WARNs: issues are visible and logged but the
+                  pipeline is not blocked. Useful during migration windows.
+
+        ENFORCE — default: results are returned unchanged. FAILs are real
+                  failures; the caller should treat a non-zero failed count
+                  as a blocking condition.
+        """
+        if self.mode == "ENFORCE":
+            return all_results
+
+        updated = []
+        for r in all_results:
+            if r["status"] == "FAIL":
+                r = {**r}  # shallow copy — don't mutate original
+                if self.mode == "AUDIT":
+                    r["status"] = "INFO"
+                    r["message"] = f"[AUDIT] {r['message']}"
+                elif self.mode == "WARN":
+                    r["status"] = "WARN"
+                    r["message"] = f"[WARN] {r['message']}"
+            updated.append(r)
+        return updated
+
     def run(self, output_path: str | None = None) -> dict:
         print(f"\n[ValidationRunner]")
         print(f"  Contract : {self.contract_path}")
         print(f"  Data     : {self.data_path}")
+        print(f"  Mode     : {self.mode}")
         if self.inject_violation:
-            print("  Mode     : INJECTED VIOLATION (confidence scale 0-100)")
+            print("  Inject   : confidence scale 0-100")
 
         contract = self.load_contract()
         records, df = self.load_data()
@@ -662,10 +701,13 @@ class ValidationRunner:
         # ---- update baselines ----
         self.save_baselines(baselines)
 
+        # ---- apply enforcement mode ----
+        all_results = self._apply_mode(all_results)
+
         # ---- aggregate ----
         passed = sum(1 for r in all_results if r["status"] == "PASS")
         failed = sum(1 for r in all_results if r["status"] == "FAIL")
-        warned = sum(1 for r in all_results if r["status"] == "WARN")
+        warned = sum(1 for r in all_results if r["status"] in ("WARN", "INFO"))
         errored = sum(1 for r in all_results if r["status"] == "ERROR")
 
         report = {
@@ -673,6 +715,7 @@ class ValidationRunner:
             "contract_id": contract_id,
             "snapshot_id": snapshot_id,
             "run_timestamp": run_ts,
+            "enforcement_mode": self.mode,
             "injected_violation": self.inject_violation,
             "total_checks": len(all_results),
             "passed": passed,
@@ -691,11 +734,15 @@ class ValidationRunner:
             json.dump(report, f, indent=2)
         print(f"  Report   : {out.relative_to(ROOT)}")
         print(f"  Results  : PASS={passed} FAIL={failed} WARN={warned} ERROR={errored}")
-        if failed:
+        if self.mode == "ENFORCE" and failed:
             print("  !! VIOLATIONS DETECTED !!")
             for r in all_results:
                 if r["status"] == "FAIL":
                     print(f"     [{r['severity']}] {r['check_id']}: {r['message'][:120]}")
+        elif self.mode == "WARN" and warned:
+            print(f"  [WARN mode] {warned} issue(s) downgraded to warnings — pipeline not blocked.")
+        elif self.mode == "AUDIT":
+            print(f"  [AUDIT mode] All checks observed. No failures surfaced. Report is informational only.")
         return report
 
 
@@ -714,6 +761,17 @@ def main() -> None:
         help="Path for the output validation report JSON (default: auto-named in validation_reports/)"
     )
     parser.add_argument(
+        "--mode",
+        default="ENFORCE",
+        choices=["AUDIT", "WARN", "ENFORCE"],
+        help=(
+            "Enforcement mode (default: ENFORCE). "
+            "AUDIT: observe only, no failures surfaced. "
+            "WARN: FAILs become WARNs, pipeline not blocked. "
+            "ENFORCE: FAILs are real failures."
+        ),
+    )
+    parser.add_argument(
         "--inject-violation",
         action="store_true",
         help="Inject a confidence scale violation (0-100) to demonstrate drift detection",
@@ -724,6 +782,7 @@ def main() -> None:
         contract_path=args.contract,
         data_path=args.data,
         inject_violation=args.inject_violation,
+        mode=args.mode,
     )
     runner.run(output_path=args.output)
 
