@@ -1,10 +1,10 @@
 {
-  "report_id": "b01b81ef-cea3-44d5-823f-c82b5668c91c",
-  "generated_at": "2026-04-02T19:43:46Z",
-  "report_date": "2026-04-02",
+  "report_id": "41c3a46c-1412-426e-a8cd-2bc6190aab54",
+  "generated_at": "2026-04-03T12:56:39Z",
+  "report_date": "2026-04-03",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
-  "data_health_score": 100,
-  "health_narrative": "100/100 \u2014 Healthy: all major checks passing with no critical violations.",
+  "data_health_score": 95,
+  "health_narrative": "95/100 \u2014 Healthy: all validation checks passing, but 1 high-severity violation(s) require attention.",
   "validation_summary": {
     "total_checks": 266,
     "passed": 266,
@@ -40,14 +40,6 @@
     },
     {
       "contract_id": "week3-document-refinery-extractions",
-      "change_type": "range_tightened",
-      "column": "processing_time_ms",
-      "backward_compatible": false,
-      "compatibility_verdict": "BACKWARD_INCOMPATIBLE",
-      "required_action": "Tighter range may break existing producers. Migration plan required."
-    },
-    {
-      "contract_id": "week3-document-refinery-extractions",
       "change_type": "range_widened",
       "column": "processing_time_ms",
       "backward_compatible": true,
@@ -70,7 +62,7 @@
     {
       "priority": 1,
       "severity": "HIGH",
-      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9534 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
+      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 1.0170 (threshold=0.15). Locate change in unknown and revert or update contract clause 'ai_extensions.embedding_drift'.",
       "affected_pipelines": []
     },
     {

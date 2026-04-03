@@ -92,7 +92,7 @@ def load_ai_metrics() -> dict:
 def compute_health_score(reports: list[dict], violations: list[dict]) -> tuple[int, str]:
     """
     Formula: (checks_passed / total_checks) × 100,
-    adjusted down by 20 points per CRITICAL violation.
+    adjusted down by 20 points per CRITICAL violation and 5 points per HIGH violation.
     Clamp to [0, 100].
     """
     if not reports:
@@ -106,26 +106,27 @@ def compute_health_score(reports: list[dict], violations: list[dict]) -> tuple[i
 
     raw = (total_passed / total_checks) * 100
 
-    critical_violations = sum(
-        1 for v in violations
-        if v.get("severity") in ("CRITICAL",)
-    )
-    adjusted = raw - (critical_violations * 20)
+    critical_violations = sum(1 for v in violations if v.get("severity") == "CRITICAL")
+    high_violations = sum(1 for v in violations if v.get("severity") == "HIGH")
+    adjusted = raw - (critical_violations * 20) - (high_violations * 5)
     score = max(0, min(100, int(round(adjusted))))
 
-    narrative = (
-        f"{score}/100 — "
-        + (
-            "Healthy: all major checks passing with no critical violations."
-            if score >= 90
-            else (
-                f"Degraded: {critical_violations} critical violation(s) detected. "
-                "Immediate action required."
-                if score < 60
-                else "Caution: minor violations present. Review recommended."
+    if score >= 90:
+        if high_violations or critical_violations:
+            narrative = (
+                f"{score}/100 — Healthy: all validation checks passing, but "
+                f"{high_violations} high-severity violation(s) require attention."
             )
+        else:
+            narrative = f"{score}/100 — Healthy: all checks passing with no violations."
+    elif score < 60:
+        narrative = (
+            f"{score}/100 — Degraded: {critical_violations} critical and "
+            f"{high_violations} high-severity violation(s) detected. Immediate action required."
         )
-    )
+    else:
+        narrative = f"{score}/100 — Caution: violations present. Review recommended."
+
     return score, narrative
 
 
@@ -180,18 +181,22 @@ def load_schema_evolution_reports() -> list[dict]:
 
 
 def schema_changes_summary(evo_reports: list[dict]) -> list[dict]:
-    summary = []
+    # Reports are sorted oldest-first; use a dict so later occurrences of the
+    # same (contract_id, change_type, column) key overwrite earlier ones,
+    # keeping only the most recent instance of each distinct change.
+    seen: dict[tuple, dict] = {}
     for r in evo_reports:
         for c in r.get("changes", []):
-            summary.append({
+            key = (r.get("contract_id"), c.get("change_type"), c.get("column"))
+            seen[key] = {
                 "contract_id": r.get("contract_id"),
                 "change_type": c.get("change_type"),
                 "column": c.get("column"),
                 "backward_compatible": c.get("backward_compatible"),
                 "compatibility_verdict": r.get("compatibility_verdict"),
                 "required_action": c.get("required_action", ""),
-            })
-    return summary
+            }
+    return list(seen.values())
 
 
 # ---------------------------------------------------------------------------
@@ -206,6 +211,9 @@ def generate_recommended_actions(
     actions = []
     severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
 
+    current_drift_score = (ai_metrics.get("embedding_drift") or {}).get("drift_score")
+    current_drift_threshold = (ai_metrics.get("embedding_drift") or {}).get("threshold", 0.15)
+
     for v in sorted(violations, key=lambda x: severity_order.get(x.get("severity", "LOW"), 4)):
         if len(actions) >= 3:
             break
@@ -217,12 +225,22 @@ def generate_recommended_actions(
         blame = v.get("blame_chain", [{}])
         file_path = blame[0].get("file_path", "unknown") if blame else "unknown"
 
+        # For embedding drift violations, use the current score from ai_metrics
+        # instead of the stale value embedded in the violation log message.
+        if check == "ai_extensions.embedding_drift" and current_drift_score is not None:
+            msg = (
+                f"Embedding drift FAIL: {current_drift_score:.4f} "
+                f"(threshold={current_drift_threshold})"
+            )
+        else:
+            msg = v.get("message", "")[:200]
+
         actions.append({
             "priority": len(actions) + 1,
             "severity": v.get("severity"),
             "action": (
                 f"Fix field '{col}' in contract '{contract}': "
-                f"{v.get('message', '')[:200]}. "
+                f"{msg}. "
                 f"Locate change in {file_path} and revert or update contract clause "
                 f"'{check}'."
             ),
