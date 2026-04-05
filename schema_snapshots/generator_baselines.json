@@ -1,0 +1,10 @@
+{
+  "week5-event-sourcing-platform.sequence_number": {
+    "mean": 5.0,
+    "stddev": 4.836728170358491,
+    "min": 1.0,
+    "max": 21.0,
+    "n": 100,
+    "recorded_at": "2026-04-05T19:20:34Z"
+  }
+}

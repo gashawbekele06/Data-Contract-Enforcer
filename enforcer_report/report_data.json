@@ -1,26 +1,27 @@
 {
-  "report_id": "98f17cb5-265d-4f88-9e03-7f011226dbbd",
-  "generated_at": "2026-04-04T21:32:31Z",
-  "report_date": "2026-04-04",
+  "report_id": "b520d65d-8ac5-45f5-b420-63669807636b",
+  "generated_at": "2026-04-05T19:23:25Z",
+  "report_date": "2026-04-05",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
-  "data_health_score": 0,
-  "health_narrative": "0/100 \u2014 Degraded: 4 critical and 6 high-severity violation(s) detected. Immediate action required.",
+  "data_health_score": 70,
+  "health_narrative": "70/100 \u2014 Caution: violations present. Review recommended.",
   "validation_summary": {
-    "total_checks": 1658,
-    "passed": 1651,
-    "failed": 6,
-    "warned": 1,
-    "reports_analyzed": 85
+    "total_checks": 1055,
+    "passed": 1050,
+    "failed": 3,
+    "warned": 2,
+    "reports_analyzed": 65
   },
   "violations_this_week": {
-    "total": 10,
+    "total": 4,
     "by_severity": {
-      "HIGH": 6,
-      "CRITICAL": 4
+      "UNKNOWN": 1,
+      "CRITICAL": 1,
+      "HIGH": 2
     },
     "top_violations": [
       {
-        "violation_id": "0c1c3558-62d7-4d9a-86c2-65491a344a84",
+        "violation_id": "d34c7469-5e04-4320-a14f-c243dbe8f5bb",
         "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
         "severity": "CRITICAL",
         "system": "week3-document-refinery-extractions",
@@ -29,22 +30,22 @@
         "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
       },
       {
-        "violation_id": "cb44fd66-bd85-49ec-9a01-7ba4d3807813",
-        "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
-        "severity": "CRITICAL",
+        "violation_id": "1e95bddf-3910-45ec-b937-a2ba44533eb0",
+        "check_id": "ai_extensions.embedding_drift",
+        "severity": "HIGH",
         "system": "week3-document-refinery-extractions",
-        "field": "extracted_facts[*].confidence",
-        "message": "extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.",
-        "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
+        "field": "extracted_facts[*].text",
+        "message": "Embedding drift FAIL: 1.0000 (threshold=0.15)",
+        "downstream_impact": "No downstream consumers identified in lineage graph."
       },
       {
-        "violation_id": "d59c20c2-ae84-4d2d-accc-dda6d943b729",
-        "check_id": "week3-document-refinery-extractions.extracted_facts.confidence.range",
-        "severity": "CRITICAL",
+        "violation_id": "2940fe02-fa62-4c3e-9032-4a80a9f6fd7c",
+        "check_id": "ai_extensions.embedding_drift",
+        "severity": "HIGH",
         "system": "week3-document-refinery-extractions",
-        "field": "extracted_facts[*].confidence",
-        "message": "extracted_facts[*].confidence range violation: actual [70.0000, 97.0000]. confidence is in 0\u2013100 range, not 0.0\u20131.0. Breaking change detected.",
-        "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
+        "field": "extracted_facts[*].text",
+        "message": "Embedding drift FAIL: 0.9821 (threshold=0.15)",
+        "downstream_impact": "No downstream consumers identified in lineage graph."
       }
     ]
   },
@@ -69,7 +70,7 @@
   "ai_risk_assessment": {
     "overall_ai_status": "AMBER",
     "embedding_drift_status": "FAIL",
-    "embedding_drift_score": 0.997986,
+    "embedding_drift_score": 0.98213,
     "embedding_threshold": 0.15,
     "prompt_input_violation_rate": 0.0,
     "llm_output_violation_rate": 0.0,
@@ -90,16 +91,17 @@
     {
       "priority": 2,
       "severity": "HIGH",
-      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9980 (threshold=0.15). Locate change in contracts/ai_extensions.py and revert or update contract clause 'ai_extensions.embedding_drift'.",
-      "affected_pipelines": []
+      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9821 (threshold=0.15). Locate change in outputs/week3/extractions.jsonl and revert or update contract clause 'ai_extensions.embedding_drift'.",
+      "affected_pipelines": [
+        "week7-ai-contract-extension",
+        "week4-brownfield-cartographer"
+      ]
     },
     {
       "priority": 3,
-      "severity": "HIGH",
-      "action": "Investigate embedding drift in extracted_facts[*].text. Re-run contracts/ai_extensions.py --set-baseline after confirming the distribution shift is intentional.",
-      "affected_pipelines": [
-        "week3-document-extraction-pipeline"
-      ]
+      "severity": null,
+      "action": "Fix field 'unknown' in contract 'unknown': . Locate change in unknown and revert or update contract clause ''.",
+      "affected_pipelines": []
     }
   ]
 }
