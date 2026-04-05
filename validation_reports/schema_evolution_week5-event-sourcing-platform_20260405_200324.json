@@ -1,0 +1,17 @@
+{
+  "analysis_id": "f1c761a1-20f7-43aa-8184-155b93af3401",
+  "contract_id": "week5-event-sourcing-platform",
+  "snapshot_a": "schema_snapshots\\week5-event-sourcing-platform\\20260331_224726.yaml",
+  "snapshot_b": "schema_snapshots\\week5-event-sourcing-platform\\20260402_193040.yaml",
+  "analyzed_at": "2026-04-05T20:03:24Z",
+  "compatibility_verdict": "FULL_COMPATIBLE",
+  "total_changes": 0,
+  "breaking_changes": 0,
+  "compatible_changes": 0,
+  "changes": [],
+  "human_summary": [],
+  "consumer_failure_modes": [],
+  "migration_checklist": [],
+  "rollback_plan": "No rollback needed \u2014 all changes are backward compatible.",
+  "blast_radius_note": "No blast radius action required."
+}

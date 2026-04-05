@@ -1,23 +1,23 @@
 {
-  "report_id": "b520d65d-8ac5-45f5-b420-63669807636b",
-  "generated_at": "2026-04-05T19:23:25Z",
+  "report_id": "295fe35e-d926-4889-9e79-1910a85fef5d",
+  "generated_at": "2026-04-05T20:03:48Z",
   "report_date": "2026-04-05",
   "generated_by": "ReportGenerator v1.0.0 (auto-generated from live validation data)",
-  "data_health_score": 70,
-  "health_narrative": "70/100 \u2014 Caution: violations present. Review recommended.",
+  "data_health_score": 75,
+  "health_narrative": "75/100 \u2014 Caution: violations present. Review recommended.",
   "validation_summary": {
-    "total_checks": 1055,
-    "passed": 1050,
+    "total_checks": 1107,
+    "passed": 1102,
     "failed": 3,
     "warned": 2,
-    "reports_analyzed": 65
+    "reports_analyzed": 67
   },
   "violations_this_week": {
-    "total": 4,
+    "total": 3,
     "by_severity": {
       "UNKNOWN": 1,
       "CRITICAL": 1,
-      "HIGH": 2
+      "HIGH": 1
     },
     "top_violations": [
       {
@@ -30,21 +30,21 @@
         "downstream_impact": "Affects 1 downstream node(s): file::src/week3/fact_parser.py"
       },
       {
-        "violation_id": "1e95bddf-3910-45ec-b937-a2ba44533eb0",
+        "violation_id": "b9158630-8f38-45bd-8546-bf1927071b01",
         "check_id": "ai_extensions.embedding_drift",
         "severity": "HIGH",
         "system": "week3-document-refinery-extractions",
         "field": "extracted_facts[*].text",
-        "message": "Embedding drift FAIL: 1.0000 (threshold=0.15)",
+        "message": "Embedding drift FAIL: 0.9829 (threshold=0.15)",
         "downstream_impact": "No downstream consumers identified in lineage graph."
       },
       {
-        "violation_id": "2940fe02-fa62-4c3e-9032-4a80a9f6fd7c",
-        "check_id": "ai_extensions.embedding_drift",
-        "severity": "HIGH",
-        "system": "week3-document-refinery-extractions",
-        "field": "extracted_facts[*].text",
-        "message": "Embedding drift FAIL: 0.9821 (threshold=0.15)",
+        "violation_id": null,
+        "check_id": null,
+        "severity": null,
+        "system": "unknown",
+        "field": "unknown",
+        "message": "",
         "downstream_impact": "No downstream consumers identified in lineage graph."
       }
     ]
@@ -70,7 +70,7 @@
   "ai_risk_assessment": {
     "overall_ai_status": "AMBER",
     "embedding_drift_status": "FAIL",
-    "embedding_drift_score": 0.98213,
+    "embedding_drift_score": 0.982915,
     "embedding_threshold": 0.15,
     "prompt_input_violation_rate": 0.0,
     "llm_output_violation_rate": 0.0,
@@ -91,10 +91,10 @@
     {
       "priority": 2,
       "severity": "HIGH",
-      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9821 (threshold=0.15). Locate change in outputs/week3/extractions.jsonl and revert or update contract clause 'ai_extensions.embedding_drift'.",
+      "action": "Fix field 'extracted_facts[*].text' in contract 'week3-document-refinery-extractions': Embedding drift FAIL: 0.9829 (threshold=0.15). Locate change in outputs/week3/extractions.jsonl and revert or update contract clause 'ai_extensions.embedding_drift'.",
       "affected_pipelines": [
-        "week7-ai-contract-extension",
-        "week4-brownfield-cartographer"
+        "week4-brownfield-cartographer",
+        "week7-ai-contract-extension"
       ]
     },
     {
