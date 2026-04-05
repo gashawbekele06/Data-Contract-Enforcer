@@ -87,8 +87,16 @@ def _registry_subscribers(contract_id: str, field_hint: str) -> list[dict]:
     return result
 
 
-def _git_blame_chain(file_path: str, hops: int = 0) -> list[dict]:
-    """Run git log on file_path and return up to 2 blame candidates."""
+def _latest_snapshot_ref(contract_id: str) -> str:
+    """Return relative path to latest schema snapshot for a contract."""
+    snap_dir = ROOT / "schema_snapshots" / contract_id
+    if not snap_dir.exists():
+        return ""
+    snapshots = sorted(snap_dir.glob("*.yaml"))
+    return str(snapshots[-1].relative_to(ROOT)).replace("\\", "/") if snapshots else ""
+
+
+def _git_blame_chain(file_path: str, hops: int = 0) -> list[dict]:    """Run git log on file_path and return up to 2 blame candidates."""
     try:
         result = subprocess.run(
             ["git", "log", "--follow", "--since=30 days ago",
@@ -265,6 +273,7 @@ def check_embedding_drift(
             s["subscriber_id"] for s in _subscribers
         }) or ["week7-ai-contract-extension"]
         _contact = _subscribers[0]["contact"] if _subscribers else "data-quality@org.com"
+        _snap = _latest_snapshot_ref(_contract_id)
         violation = {
             "schema_version": VIOLATION_LOG_SCHEMA_VERSION,
             "violation_id": str(uuid.uuid4()),
@@ -273,6 +282,28 @@ def check_embedding_drift(
             "column_name": _field,
             "severity": "HIGH",
             "type": "embedding_drift",
+            "signal_type": "embedding_drift",
+            "alert_priority": "P2",
+            "routing": {
+                "team": _subscribers[0].get("subscriber_team", "data-quality") + "-team"
+                if _subscribers else "data-quality-team",
+                "channel": "data-quality-alerts",
+                "escalate_after_minutes": 30,
+            },
+            "snapshot_ref": _snap,
+            "known_limitations": {
+                "drift_score": (
+                    "Mock embedder (no OPENAI_API_KEY) generates random unit vectors, "
+                    "producing near-orthogonal centroids and high drift scores. "
+                    "Detection is real; score is artefact of mock embedder. "
+                    "Fix: set OPENAI_API_KEY and run --set-baseline."
+                ),
+                "blame_target": (
+                    "Blame points to outputs/week3/extractions.jsonl (data file) "
+                    "not src/week3/extractor.py (producer). "
+                    "Lineage traversal limitation — see DOMAIN_NOTES.md."
+                ),
+            },
             "message": result["message"],
             "actual_value": f"drift={drift:.4f}",
             "expected": f"drift<{threshold}",
