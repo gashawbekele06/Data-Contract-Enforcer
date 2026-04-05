@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ShieldCheck, AlertTriangle,
-  FileText, Network, ChevronRight,
+  FileText, Network, ChevronRight, Terminal,
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const NAV = [
   { href: '/',              label: 'Overview',    icon: LayoutDashboard },
+  { href: '/pipeline',      label: 'Pipeline',    icon: Terminal },
   { href: '/validations',   label: 'Validations', icon: ShieldCheck },
   { href: '/violations',    label: 'Violations',  icon: AlertTriangle },
   { href: '/contracts',     label: 'Contracts',   icon: FileText },
