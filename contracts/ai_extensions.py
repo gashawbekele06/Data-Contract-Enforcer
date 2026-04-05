@@ -96,7 +96,8 @@ def _latest_snapshot_ref(contract_id: str) -> str:
     return str(snapshots[-1].relative_to(ROOT)).replace("\\", "/") if snapshots else ""
 
 
-def _git_blame_chain(file_path: str, hops: int = 0) -> list[dict]:    """Run git log on file_path and return up to 2 blame candidates."""
+def _git_blame_chain(file_path: str, hops: int = 0) -> list[dict]:
+    """Run git log on file_path and return up to 2 blame candidates."""
     try:
         result = subprocess.run(
             ["git", "log", "--follow", "--since=30 days ago",
