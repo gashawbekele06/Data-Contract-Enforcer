@@ -302,6 +302,7 @@ def git_log_for_file(file_path: str, days: int = 14) -> list[dict]:
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             cwd=str(ROOT),
             timeout=15,
         )
@@ -333,6 +334,7 @@ def git_blame_lines(file_path: str, line_start: int, line_end: int) -> list[dict
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             cwd=str(ROOT),
             timeout=15,
         )

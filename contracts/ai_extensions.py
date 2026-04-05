@@ -102,7 +102,7 @@ def _git_blame_chain(file_path: str, hops: int = 0) -> list[dict]:
         result = subprocess.run(
             ["git", "log", "--follow", "--since=30 days ago",
              "--format=%H|%an|%ae|%ai|%s", "--", file_path],
-            capture_output=True, text=True, cwd=str(ROOT), timeout=10,
+            capture_output=True, text=True, encoding="utf-8", cwd=str(ROOT), timeout=10,
         )
         chain = []
         for i, line in enumerate(result.stdout.strip().splitlines()[:2]):
@@ -349,7 +349,7 @@ def check_embedding_drift(
             ],
             "escalation_contact": _contact,
         }
-        append_to_jsonl(VIOLATION_LOG, violation)
+        append_violation_deduped(VIOLATION_LOG, violation)
 
     return result
 
@@ -605,7 +605,7 @@ def check_llm_output_schema(verdicts: list[dict]) -> dict:
                 "estimated_records": violations,
             },
         }
-        append_to_jsonl(VIOLATION_LOG, violation)
+        append_violation_deduped(VIOLATION_LOG, violation)
 
     return {
         "run_date": now_iso(),
