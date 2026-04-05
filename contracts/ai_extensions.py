@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -40,12 +41,84 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import yaml
 
 ROOT = Path(__file__).parent.parent
 QUARANTINE_DIR = ROOT / "outputs" / "quarantine"
 EMBEDDING_BASELINE = ROOT / "schema_snapshots" / "embedding_baselines.npz"
 AI_METRICS_HISTORY = ROOT / "schema_snapshots" / "ai_metrics_history.jsonl"
 VIOLATION_LOG = ROOT / "violation_log" / "violations.jsonl"
+DEFAULT_REGISTRY = ROOT / "contract_registry" / "subscriptions.yaml"
+VIOLATION_LOG_SCHEMA_VERSION = "week7-data-contract-enforcer/violation-log/1.0.0"
+
+
+# ---------------------------------------------------------------------------
+# Week 8 helpers: registry lookup + git blame for AI violations
+# ---------------------------------------------------------------------------
+
+def _registry_subscribers(contract_id: str, field_hint: str) -> list[dict]:
+    """Load subscriptions.yaml and return subscribers for contract+field."""
+    if not DEFAULT_REGISTRY.exists():
+        return []
+    try:
+        with open(DEFAULT_REGISTRY, encoding="utf-8") as f:
+            reg = yaml.safe_load(f) or {}
+    except Exception:
+        return []
+    result = []
+    for sub in reg.get("subscriptions", []):
+        if sub.get("contract_id") != contract_id:
+            continue
+        consumed = sub.get("fields_consumed", [])
+        if any(field_hint in str(fc) for fc in consumed):
+            result.append({
+                "subscriber_id": sub["subscriber_id"],
+                "subscriber_team": sub.get("subscriber_team", ""),
+                "validation_mode": sub.get("validation_mode", "AUDIT"),
+                "contact": sub.get("contact", ""),
+                "fields_consumed": consumed,
+                "breaking_field": field_hint,
+                "breaking_reason": (
+                    "Embedding drift invalidates text-based quality signals "
+                    "and historical drift baselines."
+                ),
+                "contamination_depth": 0,
+            })
+    return result
+
+
+def _git_blame_chain(file_path: str, hops: int = 0) -> list[dict]:
+    """Run git log on file_path and return up to 2 blame candidates."""
+    try:
+        result = subprocess.run(
+            ["git", "log", "--follow", "--since=30 days ago",
+             "--format=%H|%an|%ae|%ai|%s", "--", file_path],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=10,
+        )
+        chain = []
+        for i, line in enumerate(result.stdout.strip().splitlines()[:2]):
+            parts = line.split("|", 4)
+            if len(parts) == 5:
+                ts = parts[3].strip()
+                try:
+                    commit_dt = datetime.strptime(ts[:19], "%Y-%m-%d %H:%M:%S")
+                    days = (datetime.now(timezone.utc).replace(tzinfo=None) - commit_dt).days
+                    conf = round(max(0.05, min(1.0, 1.0 - days * 0.1 - hops * 0.2)), 2)
+                except Exception:
+                    conf = 0.50
+                chain.append({
+                    "rank": i + 1,
+                    "file_path": file_path,
+                    "commit_hash": parts[0],
+                    "author": parts[2],
+                    "commit_timestamp": ts,
+                    "commit_message": parts[4],
+                    "confidence_score": conf,
+                    "lineage_hops": hops,
+                })
+        return chain
+    except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+        return []
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -184,20 +257,46 @@ def check_embedding_drift(
     }
 
     if status == "FAIL":
+        _contract_id = "week3-document-refinery-extractions"
+        _field = "extracted_facts[*].text"
+        _subscribers = _registry_subscribers(_contract_id, "text")
+        _blame = _git_blame_chain("contracts/ai_extensions.py")
+        _pipelines = list({
+            s["subscriber_id"] for s in _subscribers
+        }) or ["week7-ai-contract-extension"]
+        _contact = _subscribers[0]["contact"] if _subscribers else "data-quality@org.com"
         violation = {
+            "schema_version": VIOLATION_LOG_SCHEMA_VERSION,
             "violation_id": str(uuid.uuid4()),
             "check_id": "ai_extensions.embedding_drift",
-            "contract_id": "week3-document-refinery-extractions",
-            "column_name": "extracted_facts[*].text",
+            "contract_id": _contract_id,
+            "column_name": _field,
             "severity": "HIGH",
             "type": "embedding_drift",
             "message": result["message"],
             "actual_value": f"drift={drift:.4f}",
             "expected": f"drift<{threshold}",
-            "records_failing": 0,
+            "records_failing": len(sample),
             "detected_at": now_iso(),
-            "blame_chain": [],
-            "blast_radius": {"affected_nodes": [], "affected_pipelines": [], "estimated_records": 0},
+            "blame_chain": _blame,
+            "blast_radius": {
+                "registry_subscribers": _subscribers,
+                "affected_nodes": [],
+                "affected_pipelines": _pipelines,
+                "estimated_records": len(sample),
+                "blast_radius_source": "registry" if _subscribers else "heuristic",
+            },
+            "required_action": (
+                "Re-establish the embedding baseline if the distribution shift is intentional, "
+                "or revert the extraction model to its prior version."
+            ),
+            "mitigation_steps": [
+                "Review extraction model changes in the past 48 hours",
+                "If intentional: uv run contracts/ai_extensions.py --set-baseline",
+                "If unintended: revert the extraction model to its prior version",
+                "Re-run: uv run contracts/ai_extensions.py to verify resolution",
+            ],
+            "escalation_contact": _contact,
         }
         append_to_jsonl(VIOLATION_LOG, violation)
 
@@ -632,7 +731,7 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)
-    print(f"\n  AI metrics → {out.relative_to(ROOT)}")
+    print(f"\n  AI metrics -> {out.relative_to(ROOT)}")
     print(f"  Overall   : {metrics['overall_status']}")
 
 

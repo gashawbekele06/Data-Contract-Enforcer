@@ -442,6 +442,72 @@ def build_blame_chain(failing_col: str, lineage: dict) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Mitigation guidance (for Week 8 Sentinel alert pipeline)
+# ---------------------------------------------------------------------------
+
+VIOLATION_LOG_SCHEMA_VERSION = "week7-data-contract-enforcer/violation-log/1.0.0"
+
+_MITIGATION_MAP: dict[str, tuple[str, list[str]]] = {
+    "range": (
+        "Audit all records for out-of-range values and update the producer to enforce the correct scale.",
+        [
+            "Identify the producer that changed the value scale",
+            "Roll back or patch the producer to emit values within the contract range",
+            "Re-run: uv run contracts/runner.py --contract <contract> --data <data> --mode ENFORCE",
+            "Confirm PASS before merging the fix",
+        ],
+    ),
+    "required": (
+        "Identify records with missing required fields and fix the upstream producer.",
+        [
+            "Query the dataset for null values in the failing column",
+            "Trace null introduction to its producing pipeline stage",
+            "Patch the producer to always emit the required field",
+            "Re-run validation to confirm resolution",
+        ],
+    ),
+    "unique": (
+        "Remove or de-duplicate records with repeated unique-field values.",
+        [
+            "Query for duplicate values in the failing column",
+            "Determine if duplication is from the producer or a downstream join",
+            "Apply deduplication at source or add a dedup step to the pipeline",
+            "Re-run validation to confirm resolution",
+        ],
+    ),
+    "type": (
+        "Ensure all values in the failing column match the declared type.",
+        [
+            "Inspect sample failing records for unexpected types",
+            "Fix the producer to cast values correctly before writing",
+            "Re-run validation to confirm resolution",
+        ],
+    ),
+    "format": (
+        "Ensure all values in the failing column match the declared format.",
+        [
+            "Inspect sample failing records for malformed values",
+            "Fix the producer to emit correctly formatted values",
+            "Re-run validation to confirm resolution",
+        ],
+    ),
+}
+
+_DEFAULT_MITIGATION: tuple[str, list[str]] = (
+    "Review the failing check and update the upstream producer to conform to the contract.",
+    [
+        "Inspect the sample failing records",
+        "Trace the violation to its producing pipeline stage",
+        "Apply the fix and re-run validation to confirm resolution",
+    ],
+)
+
+
+def _mitigation(check_type: str) -> tuple[str, list[str]]:
+    return _MITIGATION_MAP.get(check_type, _DEFAULT_MITIGATION)
+
+
+# ---------------------------------------------------------------------------
 # Main attribution logic
 # ---------------------------------------------------------------------------
 
@@ -527,12 +593,21 @@ def attribute_violation(
         "blast_radius_source": "registry+lineage" if registry_subscribers else "lineage-only",
     }
 
+    check_type = check_result.get("check_type", "schema_violation")
+    required_action, mitigation_steps = _mitigation(check_type)
+    escalation_contact = (
+        registry_subscribers[0].get("contact", "data-quality@org.com")
+        if registry_subscribers else "data-quality@org.com"
+    )
+
     return {
+        "schema_version": VIOLATION_LOG_SCHEMA_VERSION,
         "violation_id": str(uuid.uuid4()),
         "check_id": check_result["check_id"],
         "contract_id": contract_id,
         "column_name": check_result.get("column_name"),
         "severity": check_result.get("severity"),
+        "type": check_type,
         "message": check_result.get("message"),
         "actual_value": check_result.get("actual_value"),
         "expected": check_result.get("expected"),
@@ -540,6 +615,9 @@ def attribute_violation(
         "detected_at": now_iso(),
         "blame_chain": blame_chain,
         "blast_radius": blast_radius,
+        "required_action": required_action,
+        "mitigation_steps": mitigation_steps,
+        "escalation_contact": escalation_contact,
     }
 
 
@@ -650,7 +728,7 @@ def main() -> None:
         print(f"  Pipelines : {br.get('affected_pipelines', [])}")
         print(f"  Records   : {br.get('estimated_records', 0)}")
 
-    print(f"\n  Violations appended → {VIOLATION_LOG.relative_to(ROOT)}")
+    print(f"\n  Violations appended -> {VIOLATION_LOG.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
