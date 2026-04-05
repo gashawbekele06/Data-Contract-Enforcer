@@ -182,11 +182,11 @@ def embed_texts(texts: list[str], model: str = "text-embedding-3-small") -> np.n
 
 
 def cosine_distance(a: np.ndarray, b: np.ndarray) -> float:
-    """Cosine distance (0 = identical, 1 = orthogonal, 2 = opposite)."""
-    a_norm = a / (np.linalg.norm(a) + 1e-10)
-    b_norm = b / (np.linalg.norm(b) + 1e-10)
+    """Cosine distance (0 = identical, 1 = orthogonal). Clamped to [0, 1]."""
+    a_norm = a / (np.linalg.norm(a) + 1e-9)
+    b_norm = b / (np.linalg.norm(b) + 1e-9)
     similarity = float(np.dot(a_norm, b_norm))
-    return round(1.0 - similarity, 6)
+    return round(max(0.0, min(1.0, 1.0 - similarity)), 6)
 
 
 def check_embedding_drift(
@@ -260,7 +260,7 @@ def check_embedding_drift(
         _contract_id = "week3-document-refinery-extractions"
         _field = "extracted_facts[*].text"
         _subscribers = _registry_subscribers(_contract_id, "text")
-        _blame = _git_blame_chain("contracts/ai_extensions.py")
+        _blame = _git_blame_chain("outputs/week3/extractions.jsonl")
         _pipelines = list({
             s["subscriber_id"] for s in _subscribers
         }) or ["week7-ai-contract-extension"]

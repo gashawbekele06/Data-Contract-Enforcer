@@ -507,6 +507,15 @@ def _mitigation(check_type: str) -> tuple[str, list[str]]:
     return _MITIGATION_MAP.get(check_type, _DEFAULT_MITIGATION)
 
 
+def _latest_snapshot_ref(contract_id: str) -> str:
+    """Return path to latest schema snapshot for a contract, or empty string."""
+    snap_dir = ROOT / "schema_snapshots" / contract_id
+    if not snap_dir.exists():
+        return ""
+    snapshots = sorted(snap_dir.glob("*.yaml"))
+    return str(snapshots[-1].relative_to(ROOT)).replace("\\", "/") if snapshots else ""
+
+
 # ---------------------------------------------------------------------------
 # Main attribution logic
 # ---------------------------------------------------------------------------
@@ -600,14 +609,28 @@ def attribute_violation(
         if registry_subscribers else "data-quality@org.com"
     )
 
+    # Week 8 Sentinel fields
+    _severity = check_result.get("severity", "LOW")
+    _priority_map = {"CRITICAL": "P1", "HIGH": "P2", "MEDIUM": "P3", "LOW": "P4"}
+    _snapshot = _latest_snapshot_ref(contract_id)
+
     return {
         "schema_version": VIOLATION_LOG_SCHEMA_VERSION,
         "violation_id": str(uuid.uuid4()),
         "check_id": check_result["check_id"],
         "contract_id": contract_id,
         "column_name": check_result.get("column_name"),
-        "severity": check_result.get("severity"),
+        "severity": _severity,
         "type": check_type,
+        "signal_type": "schema_violation",
+        "alert_priority": _priority_map.get(_severity, "P3"),
+        "routing": {
+            "team": registry_subscribers[0].get("subscriber_team", "data-quality") + "-team"
+            if registry_subscribers else "data-quality-team",
+            "channel": "data-quality-alerts",
+            "escalate_after_minutes": 30 if _severity in ("CRITICAL", "HIGH") else 120,
+        },
+        "snapshot_ref": _snapshot,
         "message": check_result.get("message"),
         "actual_value": check_result.get("actual_value"),
         "expected": check_result.get("expected"),
