@@ -162,6 +162,25 @@ def append_to_jsonl(path: Path, record: dict) -> None:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
+def append_violation_deduped(path: Path, violation: dict) -> bool:
+    """Append violation only if same check_id not already in the log. Returns True if written."""
+    check_id = violation.get("check_id", "")
+    if path.exists():
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                    if rec.get("check_id") == check_id:
+                        return False
+                except json.JSONDecodeError:
+                    pass
+    append_to_jsonl(path, violation)
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Extension 1: Embedding Drift Detection
 # ---------------------------------------------------------------------------
