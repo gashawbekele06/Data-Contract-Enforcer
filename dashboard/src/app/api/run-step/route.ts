@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       const child = spawn(command, {
         cwd: PROJECT_ROOT,
         shell: true,
-        env: { ...process.env, PYTHONUNBUFFERED: '1' },
+        env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' },
       })
 
       const send = (text: string) => {
